@@ -12,71 +12,65 @@ app.use(express.json());
 
 // Servir les fichiers statiques du dossier stl-files
 const STL_FILES_DIR = path.join(__dirname, '..', '..', 'stl-files');
+const WATCH_DIR = 'C:\\Users\\Quentin\\Documents\\fichier3d';
 app.use('/stl-files', express.static(STL_FILES_DIR));
 
 // Fonction pour créer le fichier metadata.json
-async function createMetadataFile(sourcePath, destPath, metadata) {
-  const metadataPath = destPath.replace(/\.[^.]+$/, '.metadata.json');
-  const metadataContent = {
-    ...metadata,
-    description: "Description à remplir",
-    dimensions: {
-      x: 0,
-      y: 0,
-      z: 0
-    },
-    auteur: "Non spécifié",
-    parametresImpression: {
-      temperature: 200,
-      vitesse: 60,
-      remplissage: 20
-    }
+async function createMetadataFile(filePath) {
+  const fileName = path.basename(filePath);
+  const stats = await fs.stat(filePath);
+  const metadataPath = path.join(
+    STL_FILES_DIR,
+    fileName.replace(/\.stl$/i, '.metadata.json')
+  );
+
+  const metadata = {
+    nom: fileName.replace(/\.stl$/i, ''),
+    format: 'STL',
+    taille: stats.size,
+    dateCreation: stats.birthtime,
+    dateModification: stats.mtime,
+    categorie: 'filament',
+    theme: 'autre'
   };
 
-  await fs.writeFile(metadataPath, JSON.stringify(metadataContent, null, 2));
-  return metadataPath;
+  await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+  return metadata;
 }
 
 // Fonction pour copier un fichier et créer ses métadonnées
-async function copyFileWithMetadata(sourcePath, fileName) {
-  const destPath = path.join(STL_FILES_DIR, fileName);
-
-  // Créer le dossier stl-files s'il n'existe pas
-  if (!fsSync.existsSync(STL_FILES_DIR)) {
-    await fs.mkdir(STL_FILES_DIR, { recursive: true });
-  }
-
-  // Copier le fichier s'il n'existe pas déjà
-  if (!fsSync.existsSync(destPath)) {
-    await fs.copyFile(sourcePath, destPath);
-    console.log(`Fichier copié : ${fileName}`);
-  }
-
-  const metadata = await getFileMetadata(sourcePath);
-  const metadataPath = await createMetadataFile(sourcePath, destPath, metadata);
-  
-  return { ...metadata, metadataPath };
-}
-
-// Fonction pour obtenir les métadonnées d'un fichier
-async function getFileMetadata(filePath) {
+async function copyFileWithMetadata(sourcePath) {
   try {
-    const stats = await fs.stat(filePath);
-    const ext = path.extname(filePath).toLowerCase();
-    const fileName = path.basename(filePath);
+    const fileName = path.basename(sourcePath);
+    const destPath = path.join(STL_FILES_DIR, fileName);
+
+    // Créer le dossier stl-files s'il n'existe pas
+    if (!fsSync.existsSync(STL_FILES_DIR)) {
+      await fs.mkdir(STL_FILES_DIR, { recursive: true });
+    }
+
+    // Copier le fichier s'il n'existe pas déjà ou s'il a été modifié
+    let shouldCopy = true;
+    if (fsSync.existsSync(destPath)) {
+      const sourceStats = await fs.stat(sourcePath);
+      const destStats = await fs.stat(destPath);
+      shouldCopy = sourceStats.mtime > destStats.mtime;
+    }
+
+    if (shouldCopy) {
+      await fs.copyFile(sourcePath, destPath);
+      console.log(`Fichier copié: ${fileName}`);
+    }
+
+    // Créer ou mettre à jour le fichier metadata
+    const metadata = await createMetadataFile(destPath);
     return {
-      id: Buffer.from(filePath).toString('base64'),
-      nom: path.basename(filePath, ext),
-      format: ext.substring(1).toUpperCase(),
-      taille: Math.round(stats.size / (1024 * 1024) * 100) / 100, // Taille en Mo
-      dateCreation: stats.birthtime.toISOString().split('T')[0],
-      thumbnail: '/vite.svg',
-      chemin: filePath,
-      categorie: 'Non classé',
-      fileUrl: `/stl-files/${fileName}`
+      id: Buffer.from(fileName).toString('base64'),
+      ...metadata,
+      fileUrl: `/stl-files/${encodeURIComponent(fileName)}`
     };
   } catch (error) {
-    console.error(`Erreur lors de la lecture du fichier ${filePath}:`, error);
+    console.error(`Erreur lors de la copie de ${sourcePath}:`, error);
     return null;
   }
 }
@@ -84,6 +78,20 @@ async function getFileMetadata(filePath) {
 // Endpoint pour lister les modèles
 app.get('/api/models', async (req, res) => {
   try {
+    // Scanner le dossier source pour les nouveaux fichiers
+    const sourceFiles = await fs.readdir(WATCH_DIR);
+    const stlFiles = sourceFiles.filter(file => 
+      file.toLowerCase().endsWith('.stl')
+    );
+
+    // Copier les nouveaux fichiers
+    await Promise.all(
+      stlFiles.map(file => 
+        copyFileWithMetadata(path.join(WATCH_DIR, file))
+      )
+    );
+
+    // Lire tous les fichiers du dossier stl-files
     const files = await fs.readdir(STL_FILES_DIR);
     const models = [];
 

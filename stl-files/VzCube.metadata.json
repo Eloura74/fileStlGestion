@@ -1,25 +1,9 @@
 {
-  "id": "QzpcVXNlcnNcUXVlbnRpblxEb2N1bWVudHNcZmljaGllcjNkXFZ6Q3ViZS5zdGw=",
-  "nom": "VzCubegg",
+  "nom": "VzCube",
   "format": "STL",
-  "taille": 0.43,
-  "dateCreation": "2025-02-04",
-  "thumbnail": "/vite.svg",
-  "chemin": "C:\\Users\\Quentin\\Documents\\fichier3d\\VzCube.stl",
+  "taille": 446984,
+  "dateCreation": "2025-02-04T21:17:45.906Z",
+  "dateModification": "2023-09-01T07:27:16.641Z",
   "categorie": "filament",
-  "fileUrl": "/stl-files/VzCube.stl",
-  "description": "Description à remplir",
-  "dimensions": {
-    "x": 0,
-    "y": 0,
-    "z": 0
-  },
-  "auteur": "Non spécifié",
-  "parametresImpression": {
-    "temperature": 200,
-    "vitesse": 60,
-    "remplissage": 20
-  },
-  "theme": "figurine",
-  "dateModification": "2025-02-04T21:36:51.503Z"
+  "theme": "autre"
 }

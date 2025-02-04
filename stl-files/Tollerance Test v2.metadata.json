@@ -1,23 +1,9 @@
 {
-  "id": "QzpcVXNlcnNcUXVlbnRpblxEb2N1bWVudHNcZmljaGllcjNkXFRvbGxlcmFuY2UgVGVzdCB2Mi5zdGw=",
   "nom": "Tollerance Test v2",
   "format": "STL",
-  "taille": 3.17,
-  "dateCreation": "2025-02-04",
-  "thumbnail": "/vite.svg",
-  "chemin": "C:\\Users\\Quentin\\Documents\\fichier3d\\Tollerance Test v2.stl",
-  "categorie": "Non classé",
-  "fileUrl": "/stl-files/Tollerance Test v2.stl",
-  "description": "Description à remplir",
-  "dimensions": {
-    "x": 0,
-    "y": 0,
-    "z": 0
-  },
-  "auteur": "Non spécifié",
-  "parametresImpression": {
-    "temperature": 200,
-    "vitesse": 60,
-    "remplissage": 20
-  }
+  "taille": 3321184,
+  "dateCreation": "2025-02-04T21:17:45.906Z",
+  "dateModification": "2024-06-30T13:48:04.222Z",
+  "categorie": "filament",
+  "theme": "autre"
 }
