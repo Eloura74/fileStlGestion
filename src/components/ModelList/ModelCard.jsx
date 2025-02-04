@@ -35,10 +35,10 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
 
   if (isEditing) {
     return (
-      <div className="bg-white rounded-xl shadow-lg p-6">
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-purple-500/20">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-purple-300">
               Nom
             </label>
             <input
@@ -46,22 +46,22 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
               name="nom"
               value={editForm.nom}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full bg-gray-700/50 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-purple-300">
               Catégorie
             </label>
             <select
               name="categorie"
               value={editForm.categorie}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full bg-gray-700/50 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             >
               {categories.map((cat) => (
-                <option key={cat} value={cat}>
+                <option key={cat} value={cat} className="bg-gray-800">
                   {cat.charAt(0).toUpperCase() + cat.slice(1)}
                 </option>
               ))}
@@ -69,17 +69,17 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-purple-300">
               Thème
             </label>
             <select
               name="theme"
               value={editForm.theme}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full bg-gray-700/50 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             >
               {themes.map((theme) => (
-                <option key={theme} value={theme}>
+                <option key={theme} value={theme} className="bg-gray-800">
                   {theme.charAt(0).toUpperCase() + theme.slice(1)}
                 </option>
               ))}
@@ -89,14 +89,14 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
           <div className="flex justify-end space-x-2 pt-4">
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
             >
               Sauvegarder
             </button>
             <button
               type="button"
               onClick={() => setIsEditing(false)}
-              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
             >
               Annuler
             </button>
@@ -108,73 +108,72 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
 
   return (
     <div
-      className={`relative bg-white/50 rounded-xl shadow-lg overflow-hidden transition-transform duration-300 ${
-        isHovered ? "transform scale-105" : ""
+      className={`group relative bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden transition-all duration-300 border border-purple-500/20 hover:border-purple-500/40 ${
+        isHovered ? "transform scale-[1.02]" : ""
       }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="relative aspect-square bg-gray-100">
+      <div className="relative aspect-square bg-gray-900/50">
         {model.fileUrl ? (
-          <>
-            {console.log("Rendering STL with URL:", model.fileUrl)}
-            <STLViewer
-              url={model.fileUrl}
-              modelColor="#0080ff"
-              backgroundColor="#ffffff"
-              rotate={true}
-              orbitControls={true}
-            />
-          </>
+          <STLViewer
+            url={model.fileUrl}
+            modelColor="#8b5cf6"
+            backgroundColor="#1a1a1a"
+            rotate={true}
+            orbitControls={true}
+          />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-800">
+          <div className="w-full h-full flex items-center justify-center">
             <p className="text-gray-400">Aperçu non disponible</p>
           </div>
         )}
       </div>
 
       <div className="p-6">
-        <div className="flex flex-col space-y-4">
-          <h3 className="text-xl font-semibold text-gray-800">{model.nom}</h3>
+        <div className="space-y-4">
+          <h3 className="text-xl font-semibold text-white group-hover:text-purple-300 transition-colors">
+            {model.nom}
+          </h3>
 
-          <div className="flex items-center text-sm text-gray-600">
-            <span className="font-medium mr-2">Format:</span>
-            <span>{model.format}</span>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-purple-300 font-medium">Format</p>
+              <p className="text-gray-300">{model.format}</p>
+            </div>
+
+            <div>
+              <p className="text-purple-300 font-medium">Taille</p>
+              <p className="text-gray-300">{formatSize(model.taille)}</p>
+            </div>
+
+            <div>
+              <p className="text-purple-300 font-medium">Catégorie</p>
+              <p className="text-gray-300 capitalize">
+                {model.categorie || "filament"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-purple-300 font-medium">Thème</p>
+              <p className="text-gray-300 capitalize">{model.theme || "autre"}</p>
+            </div>
           </div>
 
-          <div className="flex items-center text-sm text-gray-600">
-            <span className="font-medium mr-2">Taille:</span>
-            <span>{formatSize(model.taille)}</span>
-          </div>
-
-          <div className="flex items-center text-sm text-gray-600">
-            <span className="font-medium mr-2">Date:</span>
-            <span>
-              {new Date(model.dateCreation).toLocaleDateString()}
-            </span>
-          </div>
-
-          <div className="flex items-center text-sm text-gray-600">
-            <span className="font-medium mr-2">Catégorie:</span>
-            <span className="capitalize">{model.categorie || "filament"}</span>
-          </div>
-
-          <div className="flex items-center text-sm text-gray-600">
-            <span className="font-medium mr-2">Thème:</span>
-            <span className="capitalize">{model.theme || "autre"}</span>
-          </div>
-          <div className="flex justify-end space-x-2 mt-4">
+          <div className="flex justify-end space-x-2 pt-4">
             <button
               onClick={() => setIsEditing(true)}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-md"
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors shadow-md flex items-center space-x-2"
             >
-              Éditer
+              <PencilIcon className="h-4 w-4" />
+              <span>Éditer</span>
             </button>
             <button
               onClick={() => onDelete(model)}
-              className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition-colors shadow-md"
+              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors shadow-md flex items-center space-x-2"
             >
-              Supprimer
+              <TrashIcon className="h-4 w-4" />
+              <span>Supprimer</span>
             </button>
           </div>
         </div>
