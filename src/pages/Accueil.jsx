@@ -6,6 +6,7 @@ import {
   FireIcon,
 } from "@heroicons/react/24/outline";
 import STLViewer from '../components/STLViewer/STLViewer';
+import Actualites from "../components/Actualites/Actualites";
 
 const Accueil = () => {
   const [recentModels, setRecentModels] = useState([]);
@@ -87,21 +88,7 @@ const Accueil = () => {
 
         {/* News Section */}
         <div className="mt-12">
-          <div className="bg-white/10 rounded-xl p-6">
-            <h2 className="text-2xl font-semibold text-white flex items-center mb-6">
-              <NewspaperIcon className="h-6 w-6 mr-2 text-blue-400" />
-              Actualités 3D
-            </h2>
-            <div className="text-gray-300">
-              <p className="mb-2">Chargement des actualités...</p>
-              <div className="h-2 bg-blue-600/30 rounded">
-                <div className="w-1/3 h-full bg-blue-600 rounded"></div>
-              </div>
-              <p className="mt-2 text-sm text-gray-400">
-                Les dernières actualités du monde de l'impression 3D seront bientôt disponibles.
-              </p>
-            </div>
-          </div>
+          <Actualites />
         </div>
       </div>
     </div>
