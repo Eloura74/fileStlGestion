@@ -11,29 +11,60 @@ function Model({ url }) {
 
   React.useEffect(() => {
     const loader = new STLLoader();
-    loader.load(
-      url,
-      (geometry) => {
-        geometry.computeVertexNormals();
-        // Centrer et ajuster l'échelle du modèle
-        geometry.center();
-        const box = new THREE.Box3().setFromObject(new THREE.Mesh(geometry));
-        const size = box.getSize(new THREE.Vector3());
-        const maxSize = Math.max(size.x, size.y, size.z);
-        const scale = 1 / maxSize;
-        geometry.scale(scale, scale, scale);
-        setGeometry(geometry);
-      },
-      undefined,
-      (error) => {
-        console.error("Erreur de chargement STL:", error);
-        setError(error);
+    try {
+      loader.load(
+        url,
+        (geometry) => {
+          try {
+            geometry.computeVertexNormals();
+            // Centrer et ajuster l'échelle du modèle
+            geometry.center();
+            const box = new THREE.Box3().setFromObject(new THREE.Mesh(geometry));
+            const size = box.getSize(new THREE.Vector3());
+            const maxSize = Math.max(size.x, size.y, size.z);
+            const scale = 1 / maxSize;
+            geometry.scale(scale, scale, scale);
+            setGeometry(geometry);
+            setError(null);
+          } catch (err) {
+            console.error("Erreur lors du traitement du modèle:", err);
+            setError(err);
+          }
+        },
+        undefined,
+        (error) => {
+          console.error("Erreur de chargement STL:", error);
+          setError(error);
+        }
+      );
+    } catch (err) {
+      console.error("Erreur critique lors du chargement:", err);
+      setError(err);
+    }
+
+    return () => {
+      if (geometry) {
+        geometry.dispose();
       }
-    );
+    };
   }, [url]);
 
-  if (error || !geometry) {
-    return null;
+  if (error) {
+    return (
+      <mesh>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color="#ff0000" wireframe />
+      </mesh>
+    );
+  }
+
+  if (!geometry) {
+    return (
+      <mesh>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color="#cccccc" wireframe />
+      </mesh>
+    );
   }
 
   return (
@@ -50,33 +81,44 @@ function Model({ url }) {
 
 const STLViewer = ({ url, className = "" }) => {
   const canvasRef = useRef();
+  const [contextError, setContextError] = useState(false);
 
   React.useEffect(() => {
     const canvas = canvasRef.current;
+    if (!canvas) return;
+
     const handleContextLost = (event) => {
       event.preventDefault();
       console.warn('WebGL context lost.');
-      // Vous pouvez ajouter ici des actions pour informer l'utilisateur ou tenter de récupérer le contexte
+      setContextError(true);
     };
 
     const handleContextRestored = () => {
       console.log('WebGL context restored.');
-      // Recharger le modèle ou effectuer d'autres actions nécessaires
+      setContextError(false);
     };
 
     canvas.addEventListener('webglcontextlost', handleContextLost);
     canvas.addEventListener('webglcontextrestored', handleContextRestored);
 
     return () => {
-      canvas.removeEventListener('webglcontextlost', handleContextLost);
-      canvas.removeEventListener('webglcontextrestored', handleContextRestored);
+      if (canvas) {
+        canvas.removeEventListener('webglcontextlost', handleContextLost);
+        canvas.removeEventListener('webglcontextrestored', handleContextRestored);
+      }
     };
   }, []);
 
+  if (contextError) {
+    return (
+      <div className={`${className} w-full h-full bg-gray-800 rounded-lg overflow-hidden flex items-center justify-center`}>
+        <p className="text-red-500 text-sm">Erreur d'affichage 3D</p>
+      </div>
+    );
+  }
+
   return (
-    <div
-      className={`${className} w-full h-full bg-gray-800 rounded-lg overflow-hidden`}
-    >
+    <div className={`${className} w-full h-full bg-gray-800 rounded-lg overflow-hidden`}>
       <Canvas ref={canvasRef}>
         <Suspense fallback={null}>
           <PerspectiveCamera makeDefault position={[1.5, 1.5, 1.5]} />

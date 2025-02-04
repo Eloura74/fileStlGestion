@@ -34,8 +34,9 @@ function App() {
 
   const handleEdit = async (modelId, editData) => {
     try {
+      console.log('Modification du modèle:', modelId, editData);
       const response = await fetch(
-        `http://localhost:3001/api/models/${encodeURIComponent(modelId)}`,
+        `http://localhost:3001/api/models/${modelId}`,
         {
           method: "PUT",
           headers: {
@@ -46,7 +47,8 @@ function App() {
       );
 
       if (!response.ok) {
-        throw new Error("Erreur lors de la mise à jour du modèle");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erreur lors de la mise à jour du modèle");
       }
 
       // Recharger la liste des modèles après la modification
@@ -54,6 +56,7 @@ function App() {
     } catch (error) {
       console.error("Erreur lors de l'édition:", error);
       setError(error.message);
+      throw error; // Propager l'erreur pour la gestion dans ModelCard
     }
   };
 

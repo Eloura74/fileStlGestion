@@ -1,19 +1,51 @@
-const express = require('express');
-const cors = require('cors');
-const fs = require('fs').promises;
-const fsSync = require('fs');
-const path = require('path');
+const express = require("express");
+const cors = require("cors");
+const fs = require("fs").promises;
+const fsSync = require("fs");
+const path = require("path");
+const fileRoutes = require("./routes/fileRoutes");
 
 const app = express();
 const port = 3001;
 
-app.use(cors());
+// Middleware
+app.use(
+  cors({
+    origin: "http://localhost:5173", // URL de votre application Vite
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type"],
+  })
+);
 app.use(express.json());
 
+// Monter les routes du fichier fileRoutes avec le préfixe /api
+app.use('/api', fileRoutes);
+
 // Servir les fichiers statiques du dossier stl-files
-const STL_FILES_DIR = path.join(__dirname, '..', '..', 'stl-files');
-const WATCH_DIR = 'C:\\Users\\Quentin\\Documents\\fichier3d';
-app.use('/stl-files', express.static(STL_FILES_DIR));
+const STL_FILES_DIR = path.join(__dirname, "..", "..", "stl-files");
+const WATCH_DIR = "C:\\Users\\faber\\Documents\\fichier3d";
+app.use("/stl-files", express.static(STL_FILES_DIR));
+
+// Servir les fichiers STL directement depuis le dossier source
+app.use("/models", (req, res, next) => {
+  const fileName = decodeURIComponent(req.path).slice(1); // Enlever le / initial
+  const filePath = path.join(WATCH_DIR, fileName);
+
+  // Si le fichier n'a pas d'extension .stl, on l'ajoute
+  const filePathWithExt = fileName.toLowerCase().endsWith(".stl")
+    ? filePath
+    : `${filePath}.stl`;
+
+  console.log("Tentative d'accès au fichier:", filePathWithExt);
+
+  if (fsSync.existsSync(filePathWithExt)) {
+    res.setHeader("Content-Type", "application/sla");
+    res.sendFile(filePathWithExt);
+  } else {
+    console.error("Fichier non trouvé:", filePathWithExt);
+    res.status(404).send("Fichier non trouvé");
+  }
+});
 
 // Fonction pour créer le fichier metadata.json
 async function createMetadataFile(filePath) {
@@ -21,17 +53,17 @@ async function createMetadataFile(filePath) {
   const stats = await fs.stat(filePath);
   const metadataPath = path.join(
     STL_FILES_DIR,
-    fileName.replace(/\.stl$/i, '.metadata.json')
+    fileName.replace(/\.stl$/i, ".metadata.json")
   );
 
   const metadata = {
-    nom: fileName.replace(/\.stl$/i, ''),
-    format: 'STL',
+    nom: fileName.replace(/\.stl$/i, ""),
+    format: "STL",
     taille: stats.size,
     dateCreation: stats.birthtime,
     dateModification: stats.mtime,
-    categorie: 'filament',
-    theme: 'autre'
+    categorie: "filament",
+    theme: "autre",
   };
 
   await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
@@ -65,9 +97,9 @@ async function copyFileWithMetadata(sourcePath) {
     // Créer ou mettre à jour le fichier metadata
     const metadata = await createMetadataFile(destPath);
     return {
-      id: Buffer.from(fileName).toString('base64'),
+      id: Buffer.from(fileName).toString("base64"),
       ...metadata,
-      fileUrl: `/stl-files/${encodeURIComponent(fileName)}`
+      fileUrl: `/stl-files/${encodeURIComponent(fileName)}`,
     };
   } catch (error) {
     console.error(`Erreur lors de la copie de ${sourcePath}:`, error);
@@ -76,114 +108,185 @@ async function copyFileWithMetadata(sourcePath) {
 }
 
 // Endpoint pour lister les modèles
-app.get('/api/models', async (req, res) => {
+app.get("/api/models", async (req, res) => {
   try {
-    // Scanner le dossier source pour les nouveaux fichiers
-    const sourceFiles = await fs.readdir(WATCH_DIR);
-    const stlFiles = sourceFiles.filter(file => 
-      file.toLowerCase().endsWith('.stl')
-    );
-
-    // Copier les nouveaux fichiers
-    await Promise.all(
-      stlFiles.map(file => 
-        copyFileWithMetadata(path.join(WATCH_DIR, file))
-      )
-    );
-
-    // Lire tous les fichiers du dossier stl-files
-    const files = await fs.readdir(STL_FILES_DIR);
+    console.log("Récupération de la liste des modèles...");
+    const files = await fs.readdir(WATCH_DIR);
     const models = [];
 
     for (const file of files) {
-      if (file.toLowerCase().endsWith('.stl')) {
-        const filePath = path.join(STL_FILES_DIR, file);
+      if (file.toLowerCase().endsWith(".stl")) {
+        const filePath = path.join(WATCH_DIR, file);
         const stats = await fs.stat(filePath);
-        const metadataPath = path.join(
-          STL_FILES_DIR,
-          file.replace(/\.stl$/i, '.metadata.json')
-        );
 
-        let metadata = {};
+        // Construire le chemin du fichier metadata
+        const metadataPath = path.join(STL_FILES_DIR, `${file}.metadata.json`);
+        console.log("Recherche des métadonnées:", metadataPath);
+
+        let metadata = {
+          nom: file,
+          format: "STL",
+          taille: stats.size,
+          dateModification: stats.mtime,
+          categorie: "filament",
+          theme: "autre",
+        };
+
         if (fsSync.existsSync(metadataPath)) {
-          const metadataContent = await fs.readFile(metadataPath, 'utf8');
-          metadata = JSON.parse(metadataContent);
+          try {
+            const metadataContent = await fs.readFile(metadataPath, "utf8");
+            const savedMetadata = JSON.parse(metadataContent);
+            metadata = { ...metadata, ...savedMetadata };
+            console.log("Métadonnées trouvées pour", file, ":", metadata);
+          } catch (error) {
+            console.error(
+              "Erreur lors de la lecture des métadonnées pour",
+              file,
+              ":",
+              error
+            );
+          }
+        } else {
+          console.log("Pas de métadonnées trouvées pour", file);
+          // Créer le fichier metadata s'il n'existe pas
+          await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
         }
 
-        models.push({
-          id: Buffer.from(file).toString('base64'),
-          nom: metadata.nom || file.replace(/\.stl$/i, ''),
-          format: 'STL',
-          taille: stats.size,
-          dateCreation: metadata.dateCreation || stats.birthtime,
-          dateModification: metadata.dateModification || stats.mtime,
-          categorie: metadata.categorie || 'filament',
-          theme: metadata.theme || 'autre',
-          fileUrl: `/stl-files/${encodeURIComponent(file)}`
+        models.push(metadata);
+      }
+    }
+
+    console.log("Modèles trouvés:", models);
+    res.json(models);
+  } catch (error) {
+    console.error("Erreur lors de la récupération des modèles:", error);
+    res
+      .status(500)
+      .json({ error: "Erreur lors de la récupération des modèles" });
+  }
+});
+
+// Route pour modifier un modèle
+app.put("/api/models/:id", async (req, res) => {
+  try {
+    const modelId = req.params.id;
+    const updateData = req.body;
+    console.log("Modification du modèle:", modelId, updateData);
+
+    // Vérifier si le fichier STL existe
+    const oldStlPath = path.join(WATCH_DIR, modelId);
+    if (!fsSync.existsSync(oldStlPath)) {
+      console.error("Fichier STL non trouvé:", oldStlPath);
+      return res.status(404).json({ error: "Fichier STL non trouvé" });
+    }
+
+    // Si le nom a changé, copier le fichier avec le nouveau nom
+    let newStlPath = oldStlPath;
+    if (updateData.nom && updateData.nom !== modelId) {
+      const newFileName = updateData.nom.endsWith(".stl")
+        ? updateData.nom
+        : `${updateData.nom}.stl`;
+      newStlPath = path.join(WATCH_DIR, newFileName);
+
+      // Vérifier si le nouveau nom n'existe pas déjà
+      if (fsSync.existsSync(newStlPath)) {
+        return res
+          .status(400)
+          .json({ error: "Un fichier avec ce nom existe déjà" });
+      }
+
+      try {
+        // Copier le fichier avec le nouveau nom
+        console.log("Copie du fichier:", oldStlPath, "->", newStlPath);
+        await fs.copyFile(oldStlPath, newStlPath);
+
+        // Attendre un peu pour s'assurer que la copie est terminée
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Supprimer l'ancien fichier
+        try {
+          await fs.unlink(oldStlPath);
+        } catch (deleteError) {
+          console.warn(
+            "Impossible de supprimer l'ancien fichier:",
+            deleteError
+          );
+          // On continue même si la suppression échoue
+        }
+      } catch (copyError) {
+        console.error("Erreur lors de la copie du fichier:", copyError);
+        return res.status(500).json({
+          error:
+            "Erreur lors de la copie du fichier. Vérifiez les permissions du dossier.",
         });
       }
     }
 
-    res.json(models);
-  } catch (error) {
-    console.error('Erreur lors de la lecture des modèles:', error);
-    res.status(500).json({ error: 'Erreur lors de la lecture des modèles' });
-  }
-});
-
-// Endpoint pour mettre à jour un modèle
-app.put('/api/models/:id', async (req, res) => {
-  try {
-    const modelId = decodeURIComponent(req.params.id);
-    const updateData = req.body;
-    console.log('ID reçu:', modelId);
-    console.log('Données reçues:', updateData);
-    
-    const fileName = Buffer.from(modelId, 'base64').toString();
-    const filePath = path.join(STL_FILES_DIR, fileName);
-    console.log('Chemin du fichier:', filePath);
-    
-    // Vérifier si le fichier existe
-    if (!fsSync.existsSync(filePath)) {
-      console.error('Fichier non trouvé:', filePath);
-      return res.status(404).json({ error: 'Modèle non trouvé' });
-    }
-
-    // Mettre à jour le fichier metadata.json associé
-    const metadataPath = path.join(
+    // Construire les chemins des fichiers metadata
+    const oldMetadataPath = path.join(
       STL_FILES_DIR,
-      fileName.replace(/\.stl$/i, '.metadata.json')
+      `${modelId}.metadata.json`
     );
-    console.log('Chemin metadata:', metadataPath);
-    
-    let metadata = {};
-    
-    if (fsSync.existsSync(metadataPath)) {
-      const metadataContent = await fs.readFile(metadataPath, 'utf8');
-      metadata = JSON.parse(metadataContent);
-      console.log('Metadata existant:', metadata);
+    const newMetadataPath = path.join(
+      STL_FILES_DIR,
+      `${path.basename(newStlPath)}.metadata.json`
+    );
+
+    // Lire les métadonnées existantes ou créer de nouvelles
+    let metadata = {
+      nom: path.basename(newStlPath),
+      format: "STL",
+      taille: (await fs.stat(newStlPath)).size,
+      dateModification: new Date(),
+      categorie: updateData.categorie || "filament",
+      theme: updateData.theme || "autre",
+    };
+
+    if (fsSync.existsSync(oldMetadataPath)) {
+      try {
+        const existingMetadata = JSON.parse(
+          await fs.readFile(oldMetadataPath, "utf8")
+        );
+        metadata = { ...metadata, ...existingMetadata };
+
+        // Si l'ancien fichier metadata existe et que le nom a changé, le supprimer
+        if (oldMetadataPath !== newMetadataPath) {
+          try {
+            await fs.unlink(oldMetadataPath);
+          } catch (error) {
+            console.warn(
+              "Impossible de supprimer l'ancien fichier metadata:",
+              error
+            );
+          }
+        }
+      } catch (error) {
+        console.error(
+          "Erreur lors de la lecture des métadonnées existantes:",
+          error
+        );
+      }
     }
 
-    // Fusionner les anciennes et nouvelles données
-    const updatedMetadata = {
+    // Mettre à jour avec les nouvelles données
+    metadata = {
       ...metadata,
       ...updateData,
-      dateModification: new Date().toISOString()
+      nom: path.basename(newStlPath),
+      dateModification: new Date(),
     };
-    console.log('Metadata mis à jour:', updatedMetadata);
 
-    // Sauvegarder les modifications
-    await fs.writeFile(metadataPath, JSON.stringify(updatedMetadata, null, 2));
-    console.log('Metadata sauvegardé avec succès');
+    console.log("Sauvegarde des métadonnées:", newMetadataPath, metadata);
+    await fs.writeFile(newMetadataPath, JSON.stringify(metadata, null, 2));
 
-    res.json(updatedMetadata);
+    res.json(metadata);
   } catch (error) {
-    console.error('Erreur détaillée lors de la mise à jour du modèle:', error);
-    res.status(500).json({ 
-      error: 'Erreur lors de la mise à jour du modèle',
-      details: error.message,
-      stack: error.stack 
-    });
+    console.error("Erreur lors de la modification:", error);
+    res
+      .status(500)
+      .json({
+        error: "Erreur lors de la modification du modèle: " + error.message,
+      });
   }
 });
 

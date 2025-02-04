@@ -24,7 +24,7 @@ const PORT = 3001;
 app.use(cors());
 
 // Dossier source des fichiers STL
-const SOURCE_DIRECTORY = "C:\\Users\\Quentin\\Documents\\fichier3d";
+const SOURCE_DIRECTORY = "C:\\Users\\faber\\Documents\\fichier3d";
 // Dossier où sont stockés les fichiers STL
 const STL_DIRECTORY = join(__dirname, "stl-files");
 
@@ -99,24 +99,31 @@ try {
 app.get("/api/models", async (req, res) => {
   try {
     const files = await readdirAsync(STL_DIRECTORY);
-    const stlFiles = files.filter((file) => file.toLowerCase().endsWith(".stl"));
-    
+    const stlFiles = files.filter((file) =>
+      file.toLowerCase().endsWith(".stl")
+    );
+
     const modelsPromises = stlFiles.map(async (file) => {
       const filePath = join(STL_DIRECTORY, file);
       const stats = statSync(filePath);
       const metadataPath = join(STL_DIRECTORY, `${file}.metadata.json`);
-      
+
       let metadata = {
-        name: file.replace('.STL', ''),
-        category: 'filament',
-        theme: 'autre'
+        name: file.replace(".STL", ""),
+        category: "filament",
+        theme: "autre",
       };
 
       if (existsSync(metadataPath)) {
         try {
-          metadata = JSON.parse(await fs.promises.readFile(metadataPath, 'utf-8'));
+          metadata = JSON.parse(
+            await fs.promises.readFile(metadataPath, "utf-8")
+          );
         } catch (error) {
-          console.error(`Erreur lors de la lecture des métadonnées pour ${file}:`, error);
+          console.error(
+            `Erreur lors de la lecture des métadonnées pour ${file}:`,
+            error
+          );
         }
       }
 
@@ -125,15 +132,15 @@ app.get("/api/models", async (req, res) => {
         fileUrl: `http://localhost:${PORT}/stl-files/${file}`,
         size: stats.size,
         date: stats.mtime,
-        ...metadata
+        ...metadata,
       };
     });
 
     const models = await Promise.all(modelsPromises);
     res.json(models);
   } catch (error) {
-    console.error('Erreur lors de la lecture des fichiers:', error);
-    res.status(500).json({ error: 'Erreur lors de la lecture des fichiers' });
+    console.error("Erreur lors de la lecture des fichiers:", error);
+    res.status(500).json({ error: "Erreur lors de la lecture des fichiers" });
   }
 });
 
@@ -154,21 +161,24 @@ app.put("/api/models/:id", express.json(), async (req, res) => {
     const metadataPath = join(STL_DIRECTORY, `${id}.metadata.json`);
     const metadata = {
       id,
-      name: name || id.replace('.STL', ''),
-      category: category || 'filament',
-      theme: theme || 'autre',
-      lastModified: new Date().toISOString()
+      name: name || id.replace(".STL", ""),
+      category: category || "filament",
+      theme: theme || "autre",
+      lastModified: new Date().toISOString(),
     };
 
     // Sauvegarder les métadonnées
-    await fs.promises.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+    await fs.promises.writeFile(
+      metadataPath,
+      JSON.stringify(metadata, null, 2)
+    );
 
     res.json({
       ...metadata,
-      message: "Modèle mis à jour avec succès"
+      message: "Modèle mis à jour avec succès",
     });
   } catch (error) {
-    console.error('Erreur lors de la mise à jour du modèle:', error);
+    console.error("Erreur lors de la mise à jour du modèle:", error);
     res.status(500).json({ error: "Erreur lors de la mise à jour du modèle" });
   }
 });
@@ -180,18 +190,22 @@ app.get("/api/models/:id/metadata", async (req, res) => {
 
   try {
     if (existsSync(metadataPath)) {
-      const metadata = JSON.parse(await fs.promises.readFile(metadataPath, 'utf-8'));
+      const metadata = JSON.parse(
+        await fs.promises.readFile(metadataPath, "utf-8")
+      );
       res.json(metadata);
     } else {
       res.json({
         id,
-        name: id.replace('.STL', ''),
-        category: 'filament',
-        theme: 'autre'
+        name: id.replace(".STL", ""),
+        category: "filament",
+        theme: "autre",
       });
     }
   } catch (error) {
-    res.status(500).json({ error: "Erreur lors de la lecture des métadonnées" });
+    res
+      .status(500)
+      .json({ error: "Erreur lors de la lecture des métadonnées" });
   }
 });
 
