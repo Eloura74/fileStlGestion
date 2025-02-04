@@ -19,7 +19,7 @@ app.use(
 app.use(express.json());
 
 // Monter les routes du fichier fileRoutes avec le préfixe /api
-app.use('/api', fileRoutes);
+app.use("/api", fileRoutes);
 
 // Servir les fichiers statiques du dossier stl-files
 const STL_FILES_DIR = path.join(__dirname, "..", "..", "stl-files");
@@ -282,11 +282,9 @@ app.put("/api/models/:id", async (req, res) => {
     res.json(metadata);
   } catch (error) {
     console.error("Erreur lors de la modification:", error);
-    res
-      .status(500)
-      .json({
-        error: "Erreur lors de la modification du modèle: " + error.message,
-      });
+    res.status(500).json({
+      error: "Erreur lors de la modification du modèle: " + error.message,
+    });
   }
 });
 

@@ -4,27 +4,33 @@ import {
   ArrowRightIcon,
   NewspaperIcon,
   FireIcon,
+  FolderOpenIcon,
 } from "@heroicons/react/24/outline";
-import STLViewer from '../components/STLViewer/STLViewer';
+import STLViewer from "../components/STLViewer/STLViewer";
 import Actualites from "../components/Actualites/Actualites";
 
 const Accueil = () => {
   const [recentModels, setRecentModels] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/models')
-      .then(response => response.json())
-      .then(data => {
-        console.log('Données reçues dans Accueil:', data);
-        // Vérifier la structure d'un modèle
-        if (data.length > 0) {
-          console.log('Premier modèle:', data[0]);
-          console.log('URL du fichier STL:', data[0].fileUrl);
-        }
-        setRecentModels(data);
+    fetch("http://localhost:3001/api/models")
+      .then((response) => response.json())
+      .then((data) => {
+        // Trier les modèles par date de modification et prendre les 5 plus récents
+        const sortedModels = data
+          .sort((a, b) => new Date(b.dateModification) - new Date(a.dateModification))
+          .slice(0, 5);
+        setRecentModels(sortedModels);
       })
-      .catch(error => console.error('Erreur lors du chargement des modèles:', error));
+      .catch((error) =>
+        console.error("Erreur lors du chargement des modèles:", error)
+      );
   }, []);
+
+  const formatBytes = (bytes) => {
+    if (!bytes) return "0 Ko";
+    return (bytes / 1024).toFixed(2) + " Ko";
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900/90 via-purple-800 to-black">
@@ -68,18 +74,54 @@ const Accueil = () => {
             {recentModels.map((model) => (
               <div
                 key={model.id}
-                className="flex items-center space-x-4 bg-white/5 p-4 rounded-lg hover:bg-white/10 transition-colors"
+                className="bg-gray-700/50 rounded-lg overflow-hidden hover:ring-2 hover:ring-purple-500 transition-all"
               >
-                <div className="flex-shrink-0 w-32 h-32">
-                  <STLViewer url={model.fileUrl} />
+                {/* Visualiseur STL */}
+                <div className="aspect-w-16 aspect-h-9 bg-gray-900/50">
+                  <STLViewer
+                    url={`http://localhost:3001/models/${model.nom}${
+                      model.nom.toLowerCase().endsWith(".stl") ? "" : ".stl"
+                    }`}
+                    className="w-full h-full"
+                  />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-medium text-white truncate">
-                    {model.name}
+
+                {/* Informations du modèle */}
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold text-white mb-2 truncate">
+                    {model.nom}
                   </h3>
-                  <p className="text-sm text-gray-400">
-                    {(model.size / 1024).toFixed(2)} Ko
-                  </p>
+
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+                    <div>
+                      <span className="text-gray-400 text-xs">Format</span>
+                      <p className="text-purple-300">{model.format || "STL"}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 text-xs">Taille</span>
+                      <p className="text-purple-300">{formatBytes(model.size)}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 text-xs">Catégorie</span>
+                      <p className="text-purple-300 capitalize">
+                        {model.categorie || "autre"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 text-xs">Thème</span>
+                      <p className="text-purple-300 capitalize">
+                        {model.theme || "autre"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => window.location.href = `/models/${model.nom}`}
+                    className="mt-4 w-full flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    <FolderOpenIcon className="h-5 w-5 mr-2" />
+                    Voir les détails
+                  </button>
                 </div>
               </div>
             ))}

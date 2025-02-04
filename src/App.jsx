@@ -34,7 +34,7 @@ function App() {
 
   const handleEdit = async (modelId, editData) => {
     try {
-      console.log('Modification du modèle:', modelId, editData);
+      console.log("Modification du modèle:", modelId, editData);
       const response = await fetch(
         `http://localhost:3001/api/models/${modelId}`,
         {
@@ -48,7 +48,9 @@ function App() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Erreur lors de la mise à jour du modèle");
+        throw new Error(
+          errorData.error || "Erreur lors de la mise à jour du modèle"
+        );
       }
 
       // Recharger la liste des modèles après la modification

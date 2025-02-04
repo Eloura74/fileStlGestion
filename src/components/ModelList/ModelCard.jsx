@@ -1,5 +1,9 @@
 import React, { useState } from "react";
-import { PencilIcon, TrashIcon, FolderOpenIcon } from "@heroicons/react/24/outline";
+import {
+  PencilIcon,
+  TrashIcon,
+  FolderOpenIcon,
+} from "@heroicons/react/24/outline";
 import STLViewer from "../STLViewer/STLViewer";
 
 // Constante pour le chemin du dossier de base
@@ -31,32 +35,34 @@ const ModelCard = ({ model, onEdit, onDelete, setModel }) => {
       // Mettre à jour le modèle local avec les nouvelles données
       setModel(updatedModel);
     } catch (error) {
-      console.error('Erreur lors de la modification:', error);
+      console.error("Erreur lors de la modification:", error);
       alert(`Erreur lors de la modification du modèle: ${error.message}`);
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setEditForm(prev => ({
+    setEditForm((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const ouvrirDansExplorateur = async () => {
     try {
       // S'assurer que le nom du fichier a l'extension .stl
-      const nomFichier = model.nom.toLowerCase().endsWith('.stl') ? model.nom : `${model.nom}.stl`;
+      const nomFichier = model.nom.toLowerCase().endsWith(".stl")
+        ? model.nom
+        : `${model.nom}.stl`;
       const cheminComplet = `${WATCH_DIR}\\${nomFichier}`;
       const commande = `explorer.exe /select,"${cheminComplet}"`;
-      
-      console.log('Tentative de localisation:', cheminComplet);
-      
-      const response = await fetch('http://localhost:3001/api/open-file', {
-        method: 'POST',
+
+      console.log("Tentative de localisation:", cheminComplet);
+
+      const response = await fetch("http://localhost:3001/api/open-file", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ command: commande }),
       });
@@ -67,13 +73,15 @@ const ModelCard = ({ model, onEdit, onDelete, setModel }) => {
 
       const data = await response.json();
       if (!data.success) {
-        throw new Error(data.error || 'Échec de la localisation du fichier');
+        throw new Error(data.error || "Échec de la localisation du fichier");
       }
 
-      console.log('Fichier localisé avec succès');
+      console.log("Fichier localisé avec succès");
     } catch (error) {
-      console.error('Erreur:', error);
-      alert(`Impossible de localiser le fichier dans l'explorateur: ${error.message}`);
+      console.error("Erreur:", error);
+      alert(
+        `Impossible de localiser le fichier dans l'explorateur: ${error.message}`
+      );
     }
   };
 
@@ -184,7 +192,9 @@ const ModelCard = ({ model, onEdit, onDelete, setModel }) => {
       {/* Visualiseur STL */}
       <div className="aspect-w-16 aspect-h-9 bg-gray-900/50">
         <STLViewer
-          url={`http://localhost:3001/models/${model.nom}${model.nom.toLowerCase().endsWith('.stl') ? '' : '.stl'}`}
+          url={`http://localhost:3001/models/${model.nom}${
+            model.nom.toLowerCase().endsWith(".stl") ? "" : ".stl"
+          }`}
           className="w-full h-full"
           isHovered={isHovered}
         />
@@ -195,11 +205,11 @@ const ModelCard = ({ model, onEdit, onDelete, setModel }) => {
         <h3 className="text-lg font-semibold text-white mb-2 truncate">
           {model.nom}
         </h3>
-        
+
         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
           <div>
             <span className="text-gray-400 text-xs">Format</span>
-            <p className="text-purple-300">{model.format || 'STL'}</p>
+            <p className="text-purple-300">{model.format || "STL"}</p>
           </div>
           <div>
             <span className="text-gray-400 text-xs">Taille</span>
@@ -213,7 +223,9 @@ const ModelCard = ({ model, onEdit, onDelete, setModel }) => {
           </div>
           <div>
             <span className="text-gray-400 text-xs">Thème</span>
-            <p className="text-purple-300 capitalize">{model.theme || "autre"}</p>
+            <p className="text-purple-300 capitalize">
+              {model.theme || "autre"}
+            </p>
           </div>
         </div>
       </div>

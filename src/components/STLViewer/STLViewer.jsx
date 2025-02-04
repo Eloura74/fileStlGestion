@@ -19,7 +19,9 @@ function Model({ url }) {
             geometry.computeVertexNormals();
             // Centrer et ajuster l'échelle du modèle
             geometry.center();
-            const box = new THREE.Box3().setFromObject(new THREE.Mesh(geometry));
+            const box = new THREE.Box3().setFromObject(
+              new THREE.Mesh(geometry)
+            );
             const size = box.getSize(new THREE.Vector3());
             const maxSize = Math.max(size.x, size.y, size.z);
             const scale = 1 / maxSize;
@@ -89,36 +91,43 @@ const STLViewer = ({ url, className = "" }) => {
 
     const handleContextLost = (event) => {
       event.preventDefault();
-      console.warn('WebGL context lost.');
+      console.warn("WebGL context lost.");
       setContextError(true);
     };
 
     const handleContextRestored = () => {
-      console.log('WebGL context restored.');
+      console.log("WebGL context restored.");
       setContextError(false);
     };
 
-    canvas.addEventListener('webglcontextlost', handleContextLost);
-    canvas.addEventListener('webglcontextrestored', handleContextRestored);
+    canvas.addEventListener("webglcontextlost", handleContextLost);
+    canvas.addEventListener("webglcontextrestored", handleContextRestored);
 
     return () => {
       if (canvas) {
-        canvas.removeEventListener('webglcontextlost', handleContextLost);
-        canvas.removeEventListener('webglcontextrestored', handleContextRestored);
+        canvas.removeEventListener("webglcontextlost", handleContextLost);
+        canvas.removeEventListener(
+          "webglcontextrestored",
+          handleContextRestored
+        );
       }
     };
   }, []);
 
   if (contextError) {
     return (
-      <div className={`${className} w-full h-full bg-gray-800 rounded-lg overflow-hidden flex items-center justify-center`}>
+      <div
+        className={`${className} w-full h-full bg-gray-800 rounded-lg overflow-hidden flex items-center justify-center`}
+      >
         <p className="text-red-500 text-sm">Erreur d'affichage 3D</p>
       </div>
     );
   }
 
   return (
-    <div className={`${className} w-full h-full bg-gray-800 rounded-lg overflow-hidden`}>
+    <div
+      className={`${className} w-full h-full bg-gray-800 rounded-lg overflow-hidden`}
+    >
       <Canvas ref={canvasRef}>
         <Suspense fallback={null}>
           <PerspectiveCamera makeDefault position={[1.5, 1.5, 1.5]} />
