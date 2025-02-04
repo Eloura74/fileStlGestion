@@ -13,27 +13,48 @@ function App() {
   const [error, setError] = useState(null);
   const { filteredModels, ...filterProps } = useModelFilters(models);
 
-  useEffect(() => {
-    const fetchModels = async () => {
-      try {
-        const response = await fetch("http://localhost:3001/api/models");
-        if (!response.ok) {
-          throw new Error("Erreur lors de la récupération des modèles");
-        }
-        const data = await response.json();
-        setModels(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+  const fetchModels = async () => {
+    try {
+      const response = await fetch("http://localhost:3001/api/models");
+      if (!response.ok) {
+        throw new Error("Erreur lors de la récupération des modèles");
       }
-    };
+      const data = await response.json();
+      setModels(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchModels();
   }, []);
 
-  const handleEdit = (model) => {
-    console.log("Édition du modèle:", model);
+  const handleEdit = async (modelId, editData) => {
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/models/${encodeURIComponent(modelId)}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(editData),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la mise à jour du modèle");
+      }
+
+      // Recharger la liste des modèles après la modification
+      await fetchModels();
+    } catch (error) {
+      console.error("Erreur lors de l'édition:", error);
+      setError(error.message);
+    }
   };
 
   const handleDelete = (model) => {

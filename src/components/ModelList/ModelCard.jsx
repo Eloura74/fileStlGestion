@@ -6,8 +6,8 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
-    name: model.name,
-    category: model.category || "filament",
+    nom: model.nom,
+    categorie: model.categorie || "filament",
     theme: model.theme || "autre",
   });
 
@@ -43,8 +43,8 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
             </label>
             <input
               type="text"
-              name="name"
-              value={editForm.name}
+              name="nom"
+              value={editForm.nom}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             />
@@ -55,8 +55,8 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
               Catégorie
             </label>
             <select
-              name="category"
-              value={editForm.category}
+              name="categorie"
+              value={editForm.categorie}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             >
@@ -131,30 +131,11 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
             <p className="text-gray-400">Aperçu non disponible</p>
           </div>
         )}
-        {/* 
-        {isHovered && (
-          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center space-x-4">
-            <button
-              onClick={() => setIsEditing(true)}
-              className="p-2 bg-blue-500 rounded-full hover:bg-blue-600 transition-colors"
-              title="Modifier"
-            >
-              <PencilIcon className="h-5 w-5 text-white" />
-            </button>
-            <button
-              onClick={() => onDelete(model)}
-              className="p-2 bg-red-500 rounded-full hover:bg-red-600 transition-colors"
-              title="Supprimer"
-            >
-              <TrashIcon className="h-5 w-5 text-white" />
-            </button>
-          </div>
-        )} */}
       </div>
 
       <div className="p-6">
         <div className="flex flex-col space-y-4">
-          <h3 className="text-xl font-semibold text-gray-800">{model.name}</h3>
+          <h3 className="text-xl font-semibold text-gray-800">{model.nom}</h3>
 
           <div className="flex items-center text-sm text-gray-600">
             <span className="font-medium mr-2">Format:</span>
@@ -163,19 +144,19 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
 
           <div className="flex items-center text-sm text-gray-600">
             <span className="font-medium mr-2">Taille:</span>
-            <span>{formatSize(model.size)}</span>
+            <span>{formatSize(model.taille)}</span>
           </div>
 
           <div className="flex items-center text-sm text-gray-600">
             <span className="font-medium mr-2">Date:</span>
             <span>
-              {new Date(model.date || Date.now()).toLocaleDateString()}
+              {new Date(model.dateCreation).toLocaleDateString()}
             </span>
           </div>
 
           <div className="flex items-center text-sm text-gray-600">
             <span className="font-medium mr-2">Catégorie:</span>
-            <span className="capitalize">{model.category || "filament"}</span>
+            <span className="capitalize">{model.categorie || "filament"}</span>
           </div>
 
           <div className="flex items-center text-sm text-gray-600">

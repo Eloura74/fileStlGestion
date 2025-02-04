@@ -13,8 +13,10 @@
   "dependencies": {
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.2.0",
+    "@jscad/stl-deserializer": "^2.1.27",
     "@react-three/drei": "^9.121.4",
     "@react-three/fiber": "^8.17.14",
+    "canvas": "^3.1.0",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "react": "^18.2.0",

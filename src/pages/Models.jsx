@@ -3,7 +3,7 @@ import ModelList from "../components/ModelList/ModelList";
 
 const Models = ({ models, onEdit, onDelete, loading, error }) => {
   const [sortOrder, setSortOrder] = useState("asc");
-  const [sortBy, setSortBy] = useState("name");
+  const [sortBy, setSortBy] = useState("nom");
   const [filterTheme, setFilterTheme] = useState("tous");
   const [filterCategory, setFilterCategory] = useState("tous");
 
@@ -33,68 +33,27 @@ const Models = ({ models, onEdit, onDelete, loading, error }) => {
     );
   }
 
-  const handleEdit = async (modelId, editData) => {
-    try {
-      const response = await fetch(
-        `http://localhost:3001/api/models/${encodeURIComponent(modelId)}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(editData),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Erreur lors de la mise à jour du modèle");
-      }
-
-      const updatedModel = await response.json();
-
-      // Mettre à jour la liste des modèles localement
-      const updatedModels = models.map((model) =>
-        model.id === modelId ? { ...model, ...updatedModel } : model
-      );
-
-      // Mettre à jour l'état avec les nouveaux modèles
-      onEdit(modelId, updatedModels);
-    } catch (error) {
-      console.error("Erreur:", error);
-      throw error;
-    }
-  };
-
   // Filtrer les modèles
-  const filteredModels = models.filter((model) => {
-    const themeMatch = filterTheme === "tous" || model.theme === filterTheme;
-    const categoryMatch =
-      filterCategory === "tous" || model.category === filterCategory;
-    return themeMatch && categoryMatch;
-  });
+  let filteredModels = [...models];
+  
+  if (filterTheme !== "tous") {
+    filteredModels = filteredModels.filter(model => model.theme === filterTheme);
+  }
+  
+  if (filterCategory !== "tous") {
+    filteredModels = filteredModels.filter(model => model.categorie === filterCategory);
+  }
 
   // Trier les modèles
-  const sortedModels = [...filteredModels].sort((a, b) => {
-    let comparison = 0;
-
-    switch (sortBy) {
-      case "name":
-        comparison = (a?.name || "").localeCompare(b?.name || "");
-        break;
-      case "date":
-        comparison = new Date(a?.date || 0) - new Date(b?.date || 0);
-        break;
-      case "theme":
-        comparison = (a?.theme || "").localeCompare(b?.theme || "");
-        break;
-      case "category":
-        comparison = (a?.category || "").localeCompare(b?.category || "");
-        break;
-      default:
-        comparison = 0;
+  filteredModels.sort((a, b) => {
+    const aValue = a[sortBy];
+    const bValue = b[sortBy];
+    
+    if (sortOrder === "asc") {
+      return aValue > bValue ? 1 : -1;
+    } else {
+      return aValue < bValue ? 1 : -1;
     }
-
-    return sortOrder === "asc" ? comparison : -comparison;
   });
 
   return (
@@ -106,30 +65,30 @@ const Models = ({ models, onEdit, onDelete, loading, error }) => {
           <div className="flex flex-wrap gap-4">
             {/* Filtres */}
             <div className="flex items-center space-x-4">
+              <label className="text-gray-700">Thème:</label>
               <select
                 value={filterTheme}
                 onChange={(e) => setFilterTheme(e.target.value)}
                 className="px-4 py-2 bg-white/10 text-white rounded-lg"
               >
                 {themes.map((theme) => (
-                  <option key={theme} value={theme} className="text-gray-900">
-                    {theme === "tous"
-                      ? "Tous les thèmes"
-                      : theme.charAt(0).toUpperCase() + theme.slice(1)}
+                  <option key={theme} value={theme}>
+                    {theme.charAt(0).toUpperCase() + theme.slice(1)}
                   </option>
                 ))}
               </select>
+            </div>
 
+            <div className="flex items-center space-x-4">
+              <label className="text-gray-700">Catégorie:</label>
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
                 className="px-4 py-2 bg-white/10 text-white rounded-lg"
               >
                 {categories.map((cat) => (
-                  <option key={cat} value={cat} className="text-gray-900">
-                    {cat === "tous"
-                      ? "Toutes les catégories"
-                      : cat.charAt(0).toUpperCase() + cat.slice(1)}
+                  <option key={cat} value={cat}>
+                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
                   </option>
                 ))}
               </select>
@@ -137,29 +96,18 @@ const Models = ({ models, onEdit, onDelete, loading, error }) => {
 
             {/* Tri */}
             <div className="flex items-center space-x-4">
+              <label className="text-gray-700">Trier par:</label>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 className="px-4 py-2 bg-white/10 text-white rounded-lg"
               >
-                <option value="name" className="text-gray-900">
-                  Trier par nom
-                </option>
-                <option value="date" className="text-gray-900">
-                  Trier par date
-                </option>
-                <option value="theme" className="text-gray-900">
-                  Trier par thème
-                </option>
-                <option value="category" className="text-gray-900">
-                  Trier par catégorie
-                </option>
+                <option value="nom">Nom</option>
+                <option value="dateCreation">Date</option>
+                <option value="taille">Taille</option>
               </select>
-
               <button
-                onClick={() =>
-                  setSortOrder(sortOrder === "asc" ? "desc" : "asc")
-                }
+                onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
                 className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
               >
                 {sortOrder === "asc" ? "↑" : "↓"}
@@ -168,11 +116,7 @@ const Models = ({ models, onEdit, onDelete, loading, error }) => {
           </div>
 
           <div className="flex-1">
-            <ModelList
-              models={sortedModels}
-              onEdit={handleEdit}
-              onDelete={onDelete}
-            />
+            <ModelList models={filteredModels} onEdit={onEdit} onDelete={onDelete} />
           </div>
         </div>
       </div>

@@ -1,6 +1,41 @@
 import fs from 'fs';
 import path from 'path';
 
+function createMetadataIfNotExists(filePath, modelData) {
+  const metadataPath = filePath.replace(/\.[^.]+$/, '.metadata.json');
+  
+  if (!fs.existsSync(metadataPath)) {
+    const metadata = {
+      nom: modelData.nom,
+      description: "Description à remplir",
+      dimensions: {
+        x: 0,
+        y: 0,
+        z: 0
+      },
+      dateCreation: modelData.dateCreation,
+      auteur: "Non spécifié",
+      parametresImpression: {
+        temperature: 200,
+        vitesse: 60,
+        remplissage: 20
+      },
+      categorie: modelData.categorie,
+      format: modelData.format,
+      taille: modelData.taille
+    };
+
+    try {
+      fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+      console.log(`Fichier de métadonnées créé : ${metadataPath}`);
+    } catch (error) {
+      console.error(`Erreur lors de la création du fichier de métadonnées : ${error}`);
+    }
+  }
+
+  return metadataPath;
+}
+
 export function scanDirectory(directoryPath) {
   try {
     const files = fs.readdirSync(directoryPath);
@@ -13,7 +48,7 @@ export function scanDirectory(directoryPath) {
         const filePath = path.join(directoryPath, file);
         const stats = fs.statSync(filePath);
         
-        models.push({
+        const modelData = {
           id: Buffer.from(filePath).toString('base64'),
           nom: path.basename(file, ext),
           format: ext.substring(1).toUpperCase(),
@@ -22,7 +57,29 @@ export function scanDirectory(directoryPath) {
           thumbnail: '/vite.svg',
           chemin: filePath,
           categorie: 'Non classé'
-        });
+        };
+
+        // Créer le fichier metadata.json si nécessaire
+        const metadataPath = createMetadataIfNotExists(filePath, modelData);
+
+        // Si le fichier metadata.json existe, on lit ses données
+        if (fs.existsSync(metadataPath)) {
+          try {
+            const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+            // On fusionne les données du metadata avec modelData
+            Object.assign(modelData, {
+              description: metadata.description,
+              dimensions: metadata.dimensions,
+              auteur: metadata.auteur,
+              parametresImpression: metadata.parametresImpression,
+              categorie: metadata.categorie
+            });
+          } catch (error) {
+            console.error(`Erreur lors de la lecture du fichier de métadonnées : ${error}`);
+          }
+        }
+
+        models.push(modelData);
       }
     });
 

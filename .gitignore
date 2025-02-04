@@ -32,9 +32,9 @@ logs
 *.swo
 
 # Fichiers STL et métadonnées
-/stl-files/*.STL
-/stl-files/*.stl
-/stl-files/*.metadata.json
+# /stl-files/*.STL
+# /stl-files/*.stl
+# /stl-files/*.metadata.json
 
 # Fichiers temporaires
 *.tmp

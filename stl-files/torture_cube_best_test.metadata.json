@@ -1,0 +1,23 @@
+{
+  "id": "QzpcVXNlcnNcUXVlbnRpblxEb2N1bWVudHNcZmljaGllcjNkXHRvcnR1cmVfY3ViZV9iZXN0X3Rlc3Quc3Rs",
+  "nom": "torture_cube_best_test",
+  "format": "STL",
+  "taille": 0.08,
+  "dateCreation": "2025-02-04",
+  "thumbnail": "/vite.svg",
+  "chemin": "C:\\Users\\Quentin\\Documents\\fichier3d\\torture_cube_best_test.stl",
+  "categorie": "Non classé",
+  "fileUrl": "/stl-files/torture_cube_best_test.stl",
+  "description": "Description à remplir",
+  "dimensions": {
+    "x": 0,
+    "y": 0,
+    "z": 0
+  },
+  "auteur": "Non spécifié",
+  "parametresImpression": {
+    "temperature": 200,
+    "vitesse": 60,
+    "remplissage": 20
+  }
+}
