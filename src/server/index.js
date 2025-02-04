@@ -4,32 +4,128 @@ const fs = require("fs").promises;
 const fsSync = require("fs");
 const path = require("path");
 const fileRoutes = require("./routes/fileRoutes");
+const { dialog } = require('electron');
+const { app } = require("electron");
 
-const app = express();
+const appExpress = express();
 const port = 3001;
 
 // Middleware
-app.use(
+appExpress.use(
   cors({
     origin: "http://localhost:5173", // URL de votre application Vite
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type"],
   })
 );
-app.use(express.json());
+appExpress.use(express.json());
 
 // Monter les routes du fichier fileRoutes avec le préfixe /api
-app.use("/api", fileRoutes);
+appExpress.use("/api", fileRoutes);
+
+// Configuration du chemin de base
+let cheminBase = "C:\\Users\\faber\\Documents\\fichier3d";
+const configPath = path.join(__dirname, '..', '..', 'config.json');
+
+// Charger la configuration au démarrage
+async function chargerConfiguration() {
+  try {
+    const config = await fs.readFile(configPath, 'utf8');
+    const { cheminBase: cheminSauvegarde } = JSON.parse(config);
+    if (cheminSauvegarde && await fs.access(cheminSauvegarde).then(() => true).catch(() => false)) {
+      cheminBase = cheminSauvegarde;
+    }
+  } catch (error) {
+    console.log('Configuration non trouvée, utilisation du chemin par défaut');
+  }
+}
+
+// Sauvegarder la configuration
+async function sauvegarderConfiguration() {
+  try {
+    await fs.writeFile(configPath, JSON.stringify({ cheminBase }, null, 2));
+  } catch (error) {
+    console.error('Erreur lors de la sauvegarde de la configuration:', error);
+  }
+}
+
+// Initialiser la configuration
+chargerConfiguration();
+
+// Route pour récupérer le chemin de base actuel
+appExpress.get('/api/config/base-path', (req, res) => {
+  res.json({ basePath: cheminBase });
+});
+
+// Route pour mettre à jour le chemin de base
+appExpress.post('/api/config/base-path', async (req, res) => {
+  try {
+    const { basePath } = req.body;
+    
+    if (!basePath) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Le chemin est requis' 
+      });
+    }
+
+    // Vérifier si le chemin existe
+    try {
+      await fs.access(basePath);
+    } catch (error) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Le chemin spécifié n\'existe pas ou n\'est pas accessible' 
+      });
+    }
+
+    // Mettre à jour le chemin
+    cheminBase = basePath;
+    await sauvegarderConfiguration();
+
+    res.json({ 
+      success: true, 
+      message: 'Chemin de base mis à jour avec succès',
+      basePath: cheminBase
+    });
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour du chemin:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de la mise à jour du chemin' 
+    });
+  }
+});
+
+// Route pour ouvrir le sélecteur de dossier
+appExpress.post('/api/dialog/select-folder', async (req, res) => {
+  try {
+    const result = await dialog.showOpenDialog({
+      properties: ['openDirectory']
+    });
+
+    if (!result.canceled && result.filePaths.length > 0) {
+      res.json({ success: true, path: result.filePaths[0] });
+    } else {
+      res.json({ success: false, message: 'Aucun dossier sélectionné' });
+    }
+  } catch (error) {
+    console.error('Erreur lors de l\'ouverture du sélecteur:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erreur lors de l\'ouverture du sélecteur de dossier' 
+    });
+  }
+});
 
 // Servir les fichiers statiques du dossier stl-files
 const STL_FILES_DIR = path.join(__dirname, "..", "..", "stl-files");
-const WATCH_DIR = "C:\\Users\\faber\\Documents\\fichier3d";
-app.use("/stl-files", express.static(STL_FILES_DIR));
+appExpress.use("/stl-files", express.static(STL_FILES_DIR));
 
 // Servir les fichiers STL directement depuis le dossier source
-app.use("/models", (req, res, next) => {
+appExpress.use("/models", (req, res, next) => {
   const fileName = decodeURIComponent(req.path).slice(1); // Enlever le / initial
-  const filePath = path.join(WATCH_DIR, fileName);
+  const filePath = path.join(cheminBase, fileName);
 
   // Si le fichier n'a pas d'extension .stl, on l'ajoute
   const filePathWithExt = fileName.toLowerCase().endsWith(".stl")
@@ -108,15 +204,15 @@ async function copyFileWithMetadata(sourcePath) {
 }
 
 // Endpoint pour lister les modèles
-app.get("/api/models", async (req, res) => {
+appExpress.get("/api/models", async (req, res) => {
   try {
     console.log("Récupération de la liste des modèles...");
-    const files = await fs.readdir(WATCH_DIR);
+    const files = await fs.readdir(cheminBase);
     const models = [];
 
     for (const file of files) {
       if (file.toLowerCase().endsWith(".stl")) {
-        const filePath = path.join(WATCH_DIR, file);
+        const filePath = path.join(cheminBase, file);
         const stats = await fs.stat(filePath);
 
         // Construire le chemin du fichier metadata
@@ -167,14 +263,14 @@ app.get("/api/models", async (req, res) => {
 });
 
 // Route pour modifier un modèle
-app.put("/api/models/:id", async (req, res) => {
+appExpress.put("/api/models/:id", async (req, res) => {
   try {
     const modelId = req.params.id;
     const updateData = req.body;
     console.log("Modification du modèle:", modelId, updateData);
 
     // Vérifier si le fichier STL existe
-    const oldStlPath = path.join(WATCH_DIR, modelId);
+    const oldStlPath = path.join(cheminBase, modelId);
     if (!fsSync.existsSync(oldStlPath)) {
       console.error("Fichier STL non trouvé:", oldStlPath);
       return res.status(404).json({ error: "Fichier STL non trouvé" });
@@ -186,7 +282,7 @@ app.put("/api/models/:id", async (req, res) => {
       const newFileName = updateData.nom.endsWith(".stl")
         ? updateData.nom
         : `${updateData.nom}.stl`;
-      newStlPath = path.join(WATCH_DIR, newFileName);
+      newStlPath = path.join(cheminBase, newFileName);
 
       // Vérifier si le nouveau nom n'existe pas déjà
       if (fsSync.existsSync(newStlPath)) {
@@ -288,6 +384,6 @@ app.put("/api/models/:id", async (req, res) => {
   }
 });
 
-app.listen(port, () => {
+appExpress.listen(port, () => {
   console.log(`Serveur démarré sur http://localhost:${port}`);
 });

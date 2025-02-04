@@ -6,6 +6,8 @@ import FilterPanel from "./components/Filters/FilterPanel";
 import useModelFilters from "./hooks/useModelFilters";
 import Models from "./pages/Models";
 import Navigation from "./components/Layout/Navigation";
+import Parametres from "./pages/Parametres";
+import { BasePathProvider } from "./contexts/BasePathContext";
 
 function App() {
   const [models, setModels] = useState([]);
@@ -91,26 +93,31 @@ function App() {
   );
 
   return (
-    <Router>
-      <div className="min-h-screen bg-gray-100">
-        <Navigation />
-        <Routes>
-          <Route path="/" element={<Accueil models={models} />} />
-          <Route
-            path="/models"
-            element={
-              <Models
-                models={models}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                loading={loading}
-                error={error}
+    <BasePathProvider>
+      <Router>
+        <div className="min-h-screen bg-gray-100">
+          <Navigation />
+          <div className="container mx-auto px-4">
+            <Routes>
+              <Route path="/" element={<Accueil models={models} />} />
+              <Route
+                path="/models"
+                element={
+                  <Models
+                    models={models}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    loading={loading}
+                    error={error}
+                  />
+                }
               />
-            }
-          />
-        </Routes>
-      </div>
-    </Router>
+              <Route path="/parametres" element={<Parametres />} />
+            </Routes>
+          </div>
+        </div>
+      </Router>
+    </BasePathProvider>
   );
 }
 

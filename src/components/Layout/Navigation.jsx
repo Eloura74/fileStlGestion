@@ -1,55 +1,59 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { HomeIcon, CubeIcon, CogIcon } from "@heroicons/react/24/outline";
+import {
+  HomeIcon,
+  CubeIcon,
+  Cog6ToothIcon,
+} from "@heroicons/react/24/outline";
 
 const Navigation = () => {
   const location = useLocation();
 
+  const isActive = (path) => {
+    return location.pathname === path;
+  };
+
   return (
-    <nav className="bg-gradient-to-r from-gray-800/40 via-purple-700 to-gray-900 shadow-sm">
+    <nav className="bg-gray-800/50 backdrop-blur-sm shadow-lg mb-8">
       <div className="container mx-auto px-4">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            <div className="flex space-x-8">
-              <Link
-                to="/"
-                className={`flex items-center space-x-2 ${
-                  location.pathname === "/"
-                    ? "text-blue-600"
-                    : "text-gray-600 hover:text-blue-600"
-                } transition-colors`}
-              >
-                <HomeIcon className="h-5 w-5" />
-                <span>Accueil</span>
-              </Link>
-
-              <Link
-                to="/models"
-                className={`flex items-center space-x-2 ${
-                  location.pathname === "/models"
-                    ? "text-blue-600"
-                    : "text-gray-600 hover:text-blue-600"
-                } transition-colors`}
-              >
-                <CubeIcon className="h-5 w-5" />
-                <span>Modèles</span>
-              </Link>
-            </div>
-          </div>
-
-          <div className="flex items-center">
+        <div className="flex items-center justify-between h-16">
+          <div className="flex items-center space-x-4">
             <Link
-              to="/parametres"
-              className={`flex items-center space-x-2 ${
-                location.pathname === "/parametres"
-                  ? "text-blue-600"
-                  : "text-gray-600 hover:text-blue-600"
-              } transition-colors`}
+              to="/"
+              className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive("/")
+                  ? "bg-purple-600 text-white"
+                  : "text-gray-300 hover:bg-gray-700 hover:text-white"
+              }`}
             >
-              <CogIcon className="h-5 w-5" />
-              <span>Paramètres</span>
+              <HomeIcon className="h-5 w-5 mr-1.5" />
+              Accueil
+            </Link>
+
+            <Link
+              to="/models"
+              className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive("/models")
+                  ? "bg-purple-600 text-white"
+                  : "text-gray-300 hover:bg-gray-700 hover:text-white"
+              }`}
+            >
+              <CubeIcon className="h-5 w-5 mr-1.5" />
+              Modèles
             </Link>
           </div>
+
+          <Link
+            to="/parametres"
+            className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              isActive("/parametres")
+                ? "bg-purple-600 text-white"
+                : "text-gray-300 hover:bg-gray-700 hover:text-white"
+            }`}
+          >
+            <Cog6ToothIcon className="h-5 w-5 mr-1.5" />
+            Paramètres
+          </Link>
         </div>
       </div>
     </nav>
