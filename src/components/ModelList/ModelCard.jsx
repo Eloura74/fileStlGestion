@@ -8,7 +8,7 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
   const [editForm, setEditForm] = useState({
     name: model.name,
     category: model.category || "filament",
-    theme: model.theme || "autre"
+    theme: model.theme || "autre",
   });
 
   const themes = ["figurine", "jeux", "decoration", "fonctionnel", "autre"];
@@ -27,9 +27,9 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setEditForm(prev => ({
+    setEditForm((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -60,7 +60,7 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             >
-              {categories.map(cat => (
+              {categories.map((cat) => (
                 <option key={cat} value={cat}>
                   {cat.charAt(0).toUpperCase() + cat.slice(1)}
                 </option>
@@ -78,7 +78,7 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             >
-              {themes.map(theme => (
+              {themes.map((theme) => (
                 <option key={theme} value={theme}>
                   {theme.charAt(0).toUpperCase() + theme.slice(1)}
                 </option>
@@ -108,7 +108,7 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
 
   return (
     <div
-      className={`relative bg-white rounded-xl shadow-lg overflow-hidden transition-transform duration-300 ${
+      className={`relative bg-white/50 rounded-xl shadow-lg overflow-hidden transition-transform duration-300 ${
         isHovered ? "transform scale-105" : ""
       }`}
       onMouseEnter={() => setIsHovered(true)}
@@ -131,7 +131,7 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
             <p className="text-gray-400">Aperçu non disponible</p>
           </div>
         )}
-
+        {/* 
         {isHovered && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center space-x-4">
             <button
@@ -149,14 +149,12 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
               <TrashIcon className="h-5 w-5 text-white" />
             </button>
           </div>
-        )}
+        )} */}
       </div>
 
       <div className="p-6">
         <div className="flex flex-col space-y-4">
-          <h3 className="text-xl font-semibold text-gray-800">
-            {model.name}
-          </h3>
+          <h3 className="text-xl font-semibold text-gray-800">{model.name}</h3>
 
           <div className="flex items-center text-sm text-gray-600">
             <span className="font-medium mr-2">Format:</span>
@@ -170,7 +168,9 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
 
           <div className="flex items-center text-sm text-gray-600">
             <span className="font-medium mr-2">Date:</span>
-            <span>{new Date(model.date || Date.now()).toLocaleDateString()}</span>
+            <span>
+              {new Date(model.date || Date.now()).toLocaleDateString()}
+            </span>
           </div>
 
           <div className="flex items-center text-sm text-gray-600">
@@ -182,17 +182,16 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
             <span className="font-medium mr-2">Thème:</span>
             <span className="capitalize">{model.theme || "autre"}</span>
           </div>
-
           <div className="flex justify-end space-x-2 mt-4">
             <button
               onClick={() => setIsEditing(true)}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-md"
             >
               Éditer
             </button>
             <button
               onClick={() => onDelete(model)}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition-colors shadow-md"
             >
               Supprimer
             </button>

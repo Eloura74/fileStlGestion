@@ -7,7 +7,14 @@ const Models = ({ models, onEdit, onDelete, loading, error }) => {
   const [filterTheme, setFilterTheme] = useState("tous");
   const [filterCategory, setFilterCategory] = useState("tous");
 
-  const themes = ["tous", "figurine", "jeux", "decoration", "fonctionnel", "autre"];
+  const themes = [
+    "tous",
+    "figurine",
+    "jeux",
+    "decoration",
+    "fonctionnel",
+    "autre",
+  ];
   const categories = ["tous", "resine", "filament"];
 
   if (loading) {
@@ -28,45 +35,48 @@ const Models = ({ models, onEdit, onDelete, loading, error }) => {
 
   const handleEdit = async (modelId, editData) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/models/${encodeURIComponent(modelId)}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(editData),
-      });
+      const response = await fetch(
+        `http://localhost:3001/api/models/${encodeURIComponent(modelId)}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(editData),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Erreur lors de la mise à jour du modèle');
+        throw new Error("Erreur lors de la mise à jour du modèle");
       }
 
       const updatedModel = await response.json();
-      
+
       // Mettre à jour la liste des modèles localement
-      const updatedModels = models.map(model => 
+      const updatedModels = models.map((model) =>
         model.id === modelId ? { ...model, ...updatedModel } : model
       );
-      
+
       // Mettre à jour l'état avec les nouveaux modèles
       onEdit(modelId, updatedModels);
-
     } catch (error) {
-      console.error('Erreur:', error);
+      console.error("Erreur:", error);
       throw error;
     }
   };
 
   // Filtrer les modèles
-  const filteredModels = models.filter(model => {
+  const filteredModels = models.filter((model) => {
     const themeMatch = filterTheme === "tous" || model.theme === filterTheme;
-    const categoryMatch = filterCategory === "tous" || model.category === filterCategory;
+    const categoryMatch =
+      filterCategory === "tous" || model.category === filterCategory;
     return themeMatch && categoryMatch;
   });
 
   // Trier les modèles
   const sortedModels = [...filteredModels].sort((a, b) => {
     let comparison = 0;
-    
+
     switch (sortBy) {
       case "name":
         comparison = (a?.name || "").localeCompare(b?.name || "");
@@ -83,7 +93,7 @@ const Models = ({ models, onEdit, onDelete, loading, error }) => {
       default:
         comparison = 0;
     }
-    
+
     return sortOrder === "asc" ? comparison : -comparison;
   });
 
@@ -92,7 +102,7 @@ const Models = ({ models, onEdit, onDelete, loading, error }) => {
       <div className="px-8 py-8">
         <div className="flex flex-col space-y-6">
           <h1 className="text-2xl font-bold text-white">Mes Modèles 3D</h1>
-          
+
           <div className="flex flex-wrap gap-4">
             {/* Filtres */}
             <div className="flex items-center space-x-4">
@@ -101,9 +111,11 @@ const Models = ({ models, onEdit, onDelete, loading, error }) => {
                 onChange={(e) => setFilterTheme(e.target.value)}
                 className="px-4 py-2 bg-white/10 text-white rounded-lg"
               >
-                {themes.map(theme => (
+                {themes.map((theme) => (
                   <option key={theme} value={theme} className="text-gray-900">
-                    {theme === "tous" ? "Tous les thèmes" : theme.charAt(0).toUpperCase() + theme.slice(1)}
+                    {theme === "tous"
+                      ? "Tous les thèmes"
+                      : theme.charAt(0).toUpperCase() + theme.slice(1)}
                   </option>
                 ))}
               </select>
@@ -113,9 +125,11 @@ const Models = ({ models, onEdit, onDelete, loading, error }) => {
                 onChange={(e) => setFilterCategory(e.target.value)}
                 className="px-4 py-2 bg-white/10 text-white rounded-lg"
               >
-                {categories.map(cat => (
+                {categories.map((cat) => (
                   <option key={cat} value={cat} className="text-gray-900">
-                    {cat === "tous" ? "Toutes les catégories" : cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    {cat === "tous"
+                      ? "Toutes les catégories"
+                      : cat.charAt(0).toUpperCase() + cat.slice(1)}
                   </option>
                 ))}
               </select>
@@ -128,14 +142,24 @@ const Models = ({ models, onEdit, onDelete, loading, error }) => {
                 onChange={(e) => setSortBy(e.target.value)}
                 className="px-4 py-2 bg-white/10 text-white rounded-lg"
               >
-                <option value="name" className="text-gray-900">Trier par nom</option>
-                <option value="date" className="text-gray-900">Trier par date</option>
-                <option value="theme" className="text-gray-900">Trier par thème</option>
-                <option value="category" className="text-gray-900">Trier par catégorie</option>
+                <option value="name" className="text-gray-900">
+                  Trier par nom
+                </option>
+                <option value="date" className="text-gray-900">
+                  Trier par date
+                </option>
+                <option value="theme" className="text-gray-900">
+                  Trier par thème
+                </option>
+                <option value="category" className="text-gray-900">
+                  Trier par catégorie
+                </option>
               </select>
 
               <button
-                onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                onClick={() =>
+                  setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                }
                 className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
               >
                 {sortOrder === "asc" ? "↑" : "↓"}
