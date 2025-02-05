@@ -1,0 +1,22 @@
+{
+  "watchDirectories": [
+    {
+      "id": "dir_0",
+      "path": "C:/Users/faber/Documents/fichier3d",
+      "description": "Dossier STL 1",
+      "active": true
+    },
+    {
+      "id": "dir_1",
+      "path": "C:/Users/faber/Documents/fichier3d/test",
+      "description": "Dossier STL 2",
+      "active": true
+    },
+    {
+      "id": "dir_2",
+      "path": "C:/Users/faber/Documents/essaie",
+      "description": "Dossier STL 3",
+      "active": true
+    }
+  ]
+}

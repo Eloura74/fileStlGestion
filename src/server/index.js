@@ -1,11 +1,29 @@
+// Charger les variables d'environnement en premier
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, "../../.env") });
+
+// Afficher les variables d'environnement pour le débogage
+console.log("=== Variables d'environnement ===");
+console.log("BASE_WATCH_DIRS:", process.env.BASE_WATCH_DIRS);
+console.log("BASE_WATCH_DIR:", process.env.BASE_WATCH_DIR);
+console.log("================================");
+
 const express = require("express");
 const cors = require("cors");
 const fs = require("fs").promises;
 const fsSync = require("fs");
-const path = require("path");
 const fileRoutes = require("./routes/fileRoutes");
-const { v4: uuidv4 } = require('uuid');
-const GestionSTL = require('./utils/stlMetadata');
+const { v4: uuidv4 } = require("uuid");
+const GestionSTL = require("./utils/stlMetadata");
+
+// Configuration du logging
+const logFile = path.join(__dirname, "server.log");
+function logToFile(message) {
+  const timestamp = new Date().toISOString();
+  const logMessage = `${timestamp} - ${message}\n`;
+  fsSync.appendFileSync(logFile, logMessage);
+  console.log(message); // Affiche aussi dans la console
+}
 
 const appExpress = express();
 const port = 3001;
@@ -22,10 +40,10 @@ appExpress.use(express.json());
 
 // Servir les fichiers statiques
 const modelsPath = path.join(__dirname, "..", "..", "stl-files");
-console.log("Chemin des modèles:", modelsPath);
+logToFile(`Chemin des modèles: ${modelsPath}`);
 
 if (!fsSync.existsSync(modelsPath)) {
-  console.log("Création du dossier des modèles");
+  logToFile("Création du dossier des modèles");
   fsSync.mkdirSync(modelsPath, { recursive: true });
 }
 
@@ -33,18 +51,60 @@ if (!fsSync.existsSync(modelsPath)) {
 appExpress.use("/stl-files", express.static(modelsPath));
 appExpress.use("/models", express.static(modelsPath)); // Pour la rétrocompatibilité
 
-let cheminBase = '';
+let cheminBase = "";
+let watchConfig = { watchDirectories: [] };
+
+// Obtenir les chemins de base depuis les variables d'environnement
+const BASE_WATCH_DIRS = process.env.BASE_WATCH_DIRS
+  ? process.env.BASE_WATCH_DIRS.split(";").map((path) => path.trim())
+  : [];
+
+if (BASE_WATCH_DIRS.length === 0) {
+  logToFile("⚠️ Aucun dossier configuré dans BASE_WATCH_DIRS");
+  // Utiliser le dossier par défaut
+  BASE_WATCH_DIRS.push("C:/Users/Default/Documents/STL");
+}
+
+logToFile("=== Configuration des dossiers surveillés ===");
+logToFile(`Nombre de dossiers: ${BASE_WATCH_DIRS.length}`);
+BASE_WATCH_DIRS.forEach((dir, index) => {
+  logToFile(`${index + 1}. ${dir}`);
+});
 
 // Charger la configuration au démarrage
 async function chargerConfiguration() {
   try {
+    logToFile("=== Chargement de la configuration ===");
     const configPath = path.join(__dirname, "config.json");
     if (fsSync.existsSync(configPath)) {
       const config = JSON.parse(await fs.readFile(configPath, "utf8"));
       cheminBase = config.cheminBase || "";
+      logToFile(`Configuration chargée: ${JSON.stringify(config)}`);
+    }
+
+    // Charger la configuration des dossiers surveillés
+    const watchConfigPath = path.join(__dirname, "watch-config.json");
+    if (fsSync.existsSync(watchConfigPath)) {
+      logToFile("Chargement de la configuration de surveillance");
+      watchConfig = JSON.parse(await fs.readFile(watchConfigPath, "utf8"));
+      logToFile(
+        `Dossiers configurés: ${JSON.stringify(watchConfig.watchDirectories)}`
+      );
+    } else {
+      logToFile("Création de la configuration de surveillance par défaut");
+      watchConfig = {
+        watchDirectories: BASE_WATCH_DIRS.map((path, index) => ({
+          id: `dir_${index}`,
+          path: path,
+          description: `Dossier STL ${index + 1}`,
+          active: true,
+        })),
+      };
+      logToFile(`Nouvelle configuration: ${JSON.stringify(watchConfig)}`);
+      await fs.writeFile(watchConfigPath, JSON.stringify(watchConfig, null, 2));
     }
   } catch (error) {
-    console.error("Erreur lors du chargement de la configuration:", error);
+    logToFile(`Erreur lors du chargement de la configuration: ${error}`);
   }
 }
 
@@ -56,7 +116,7 @@ async function initialiserGestionnaireSTL() {
   await chargerConfiguration();
   gestionnaireSTL = new GestionSTL(modelsPath, cheminBase);
   await gestionnaireSTL.initialiserTousLesFichiers();
-  console.log('Métadonnées STL initialisées avec succès');
+  logToFile("Métadonnées STL initialisées avec succès");
 }
 
 // Route pour récupérer le chemin de base
@@ -73,7 +133,7 @@ appExpress.get("/api/config/base-path", (req, res) => {
       res.json({ basePath: modelsPath });
     }
   } catch (error) {
-    console.error("Erreur lors de la lecture de la configuration:", error);
+    logToFile(`Erreur lors de la lecture de la configuration: ${error}`);
     res
       .status(500)
       .json({ error: "Erreur lors de la lecture de la configuration" });
@@ -82,7 +142,7 @@ appExpress.get("/api/config/base-path", (req, res) => {
 
 // Middleware pour logger les requêtes de fichiers
 appExpress.use((req, res, next) => {
-  console.log("Requête reçue:", req.method, req.url);
+  logToFile(`Requête reçue: ${req.method} ${req.url}`);
   next();
 });
 
@@ -95,29 +155,35 @@ const configPath = path.join(__dirname, "config.json");
 // Endpoint pour lister les modèles
 appExpress.get("/api/models", async (req, res) => {
   try {
-    console.log("Récupération de la liste des modèles...");
+    logToFile("\n=== Récupération des modèles ===");
+    logToFile(`Lecture du dossier: ${modelsPath}`);
+    
     const files = await fs.readdir(modelsPath);
-    const modelPromises = files
-      .filter((file) => file.toLowerCase().endsWith(".stl"))
-      .map(async (file) => {
-        const filePath = path.join(modelsPath, file);
-        const stats = await fs.stat(filePath);
-        const metadata = await gestionnaireSTL.getMetadata(file) || {};
-        
-        return {
-          id: encodeURIComponent(file),
-          name: file,
-          path: filePath,
-          size: stats.size,
-          lastModified: stats.mtime,
-          ...metadata
-        };
-      });
+    logToFile(`Fichiers trouvés: ${files.length}`);
+    
+    const stlFiles = files.filter((file) => file.toLowerCase().endsWith(".stl"));
+    logToFile(`Fichiers STL trouvés: ${stlFiles.length}`);
+    
+    const modelPromises = stlFiles.map(async (file) => {
+      const filePath = path.join(modelsPath, file);
+      const stats = await fs.stat(filePath);
+      
+      const model = {
+        id: file,
+        name: file,
+        nom: path.parse(file).name, 
+        path: filePath,
+        size: stats.size,
+        lastModified: stats.mtime.toISOString()
+      };
+      return model;
+    });
 
     const models = await Promise.all(modelPromises);
+    logToFile(`Nombre total de modèles: ${models.length}`);
     res.json(models);
   } catch (error) {
-    console.error("Erreur lors de la récupération des modèles:", error);
+    logToFile(`Erreur lors de la récupération des modèles: ${error}`);
     res.status(500).json({ error: "Erreur lors de la récupération des modèles" });
   }
 });
@@ -125,9 +191,11 @@ appExpress.get("/api/models", async (req, res) => {
 // Endpoint pour mettre à jour un modèle
 appExpress.put("/api/models/:id", async (req, res) => {
   try {
-    const modelId = decodeURIComponent(req.params.id);
+    const modelId = req.params.id;
     const updateData = req.body;
-    console.log("Modification du modèle:", modelId, updateData);
+    logToFile(
+      `Modification du modèle: ${modelId} ${JSON.stringify(updateData)}`
+    );
 
     const oldFilePath = path.join(modelsPath, modelId);
     const oldSourcePath = path.join(cheminBase, modelId);
@@ -144,7 +212,7 @@ appExpress.put("/api/models/:id", async (req, res) => {
 
       // Renommer dans le dossier de l'application
       await fs.rename(oldFilePath, newFilePath);
-      
+
       // Renommer dans le dossier source
       if (fsSync.existsSync(oldSourcePath)) {
         await fs.rename(oldSourcePath, newSourcePath);
@@ -156,10 +224,26 @@ appExpress.put("/api/models/:id", async (req, res) => {
       // Renommer les fichiers de métadonnées
       const oldMetadataName = `${path.parse(modelId).name}.json`;
       const newMetadataName = `${path.parse(updateData.nom).name}.json`;
-      const oldMetadataPath = path.join(modelsPath, 'metadata', oldMetadataName);
-      const newMetadataPath = path.join(modelsPath, 'metadata', newMetadataName);
-      const oldSourceMetadataPath = path.join(cheminBase, 'metadata', oldMetadataName);
-      const newSourceMetadataPath = path.join(cheminBase, 'metadata', newMetadataName);
+      const oldMetadataPath = path.join(
+        modelsPath,
+        "metadata",
+        oldMetadataName
+      );
+      const newMetadataPath = path.join(
+        modelsPath,
+        "metadata",
+        newMetadataName
+      );
+      const oldSourceMetadataPath = path.join(
+        cheminBase,
+        "metadata",
+        oldMetadataName
+      );
+      const newSourceMetadataPath = path.join(
+        cheminBase,
+        "metadata",
+        newMetadataName
+      );
 
       if (fsSync.existsSync(oldMetadataPath)) {
         await fs.rename(oldMetadataPath, newMetadataPath);
@@ -188,13 +272,15 @@ appExpress.put("/api/models/:id", async (req, res) => {
       size: stats.size,
       dateModification: stats.mtime,
       lastModified: stats.mtime,
-      ...metadata
+      ...metadata,
     };
 
     res.json(updatedModel);
   } catch (error) {
-    console.error("Erreur lors de la modification du modèle:", error);
-    res.status(500).json({ error: "Erreur lors de la modification du modèle: " + error.message });
+    logToFile(`Erreur lors de la modification du modèle: ${error}`);
+    res.status(500).json({
+      error: `Erreur lors de la modification du modèle: ${error}`,
+    });
   }
 });
 
@@ -212,21 +298,25 @@ async function createMetadataFile(filePath) {
     dateCreation: stats.birthtime,
     dateModification: stats.mtime,
     categorie: "filament",
-    theme: "autre"
+    theme: "autre",
   };
 
   // Si le fichier metadata existe déjà, préserver l'ID existant
   if (fsSync.existsSync(metadataPath)) {
     try {
-      const existingMetadata = JSON.parse(await fs.readFile(metadataPath, 'utf8'));
+      const existingMetadata = JSON.parse(
+        await fs.readFile(metadataPath, "utf8")
+      );
       metadata = {
         ...metadata,
         id: existingMetadata.id || metadata.id,
         categorie: existingMetadata.categorie || metadata.categorie,
-        theme: existingMetadata.theme || metadata.theme
+        theme: existingMetadata.theme || metadata.theme,
       };
     } catch (error) {
-      console.warn(`Erreur lors de la lecture des métadonnées existantes pour ${fileName}:`, error);
+      logToFile(
+        `Erreur lors de la lecture des métadonnées existantes pour ${fileName}: ${error}`
+      );
     }
   }
 
@@ -255,7 +345,7 @@ async function copyFileWithMetadata(sourcePath) {
 
     if (shouldCopy) {
       await fs.copyFile(sourcePath, destPath);
-      console.log(`Fichier copié: ${fileName}`);
+      logToFile(`Fichier copié: ${fileName}`);
     }
 
     // Créer ou mettre à jour le fichier metadata
@@ -266,7 +356,7 @@ async function copyFileWithMetadata(sourcePath) {
       fileUrl: `/stl-files/${encodeURIComponent(fileName)}`,
     };
   } catch (error) {
-    console.error(`Erreur lors de la copie de ${sourcePath}:`, error);
+    logToFile(`Erreur lors de la copie de ${sourcePath}: ${error}`);
     return null;
   }
 }
@@ -274,50 +364,68 @@ async function copyFileWithMetadata(sourcePath) {
 // Fonction pour synchroniser les fichiers
 async function synchroniserFichiers() {
   try {
-    console.log("Début de la synchronisation des fichiers...");
-    console.log("Dossier source:", cheminBase);
-    console.log("Dossier destination:", modelsPath);
+    logToFile("\n=== Début de la synchronisation des fichiers ===");
+    logToFile(`Dossier destination: ${modelsPath}`);
 
-    // Lecture du dossier source
-    const fichiers = await fs.readdir(cheminBase);
-    const fichiersSTL = fichiers.filter((f) =>
-      f.toLowerCase().endsWith(".stl")
-    );
-    console.log("Fichiers STL trouvés dans le dossier source:", fichiersSTL);
+    // Vérifier si le dossier de destination existe
+    if (!fsSync.existsSync(modelsPath)) {
+      logToFile(`Création du dossier de destination: ${modelsPath}`);
+      fsSync.mkdirSync(modelsPath, { recursive: true });
+    }
 
-    // Pour chaque fichier STL
-    for (const fichier of fichiersSTL) {
-      const cheminSource = path.join(cheminBase, fichier);
-      const cheminDestination = path.join(modelsPath, fichier);
+    // Pour chaque dossier surveillé
+    for (const dossierSource of BASE_WATCH_DIRS) {
+      logToFile(`\nTraitement du dossier: ${dossierSource}`);
 
       try {
-        // Vérifier si le fichier existe déjà dans la destination
-        const sourceStats = await fs.stat(cheminSource);
-        let destinationStats;
-        try {
-          destinationStats = await fs.stat(cheminDestination);
-        } catch {
-          destinationStats = null;
+        // Vérifier si le dossier existe
+        if (!fsSync.existsSync(dossierSource)) {
+          logToFile(`Le dossier ${dossierSource} n'existe pas, passage au suivant`);
+          continue;
         }
 
-        // Copier si le fichier n'existe pas ou si la taille est différente
-        if (!destinationStats || sourceStats.size !== destinationStats.size) {
-          console.log(`Copie du fichier ${fichier}...`);
-          await fs.copyFile(cheminSource, cheminDestination);
-          console.log(`Fichier ${fichier} copié avec succès`);
+        // Lecture du dossier source
+        const fichiers = await fs.readdir(dossierSource);
+        const fichiersSTL = fichiers.filter((f) => f.toLowerCase().endsWith(".stl"));
+        logToFile(`Nombre de fichiers STL trouvés: ${fichiersSTL.length}`);
 
-          // Synchroniser les métadonnées
-          await gestionnaireSTL.synchroniserMetadonnees();
-        } else {
-          console.log(`Le fichier ${fichier} existe déjà et est à jour`);
+        // Pour chaque fichier STL
+        for (const fichier of fichiersSTL) {
+          const cheminSource = path.join(dossierSource, fichier);
+          const cheminDestination = path.join(modelsPath, fichier);
+          logToFile(`\nTraitement du fichier: ${fichier}`);
+
+          try {
+            // Vérifier si le fichier existe déjà dans la destination
+            const sourceStats = await fs.stat(cheminSource);
+            let destinationStats;
+            try {
+              destinationStats = await fs.stat(cheminDestination);
+              logToFile("Le fichier existe déjà dans la destination");
+            } catch {
+              destinationStats = null;
+              logToFile("Le fichier n'existe pas encore dans la destination");
+            }
+
+            // Copier si le fichier n'existe pas ou si la taille est différente
+            if (!destinationStats || sourceStats.size !== destinationStats.size) {
+              logToFile("Copie du fichier...");
+              await fs.copyFile(cheminSource, cheminDestination);
+              logToFile("Fichier copié avec succès");
+            } else {
+              logToFile("Le fichier est déjà à jour");
+            }
+          } catch (err) {
+            logToFile(`Erreur lors de la copie de ${fichier}: ${err}`);
+          }
         }
       } catch (err) {
-        console.error(`Erreur lors de la copie de ${fichier}:`, err);
+        logToFile(`Erreur lors de la lecture du dossier ${dossierSource}: ${err}`);
       }
     }
-    console.log("Synchronisation terminée");
+    logToFile("\n=== Synchronisation terminée ===");
   } catch (error) {
-    console.error("Erreur lors de la synchronisation:", error);
+    logToFile(`Erreur lors de la synchronisation: ${error}`);
   }
 }
 
@@ -326,9 +434,9 @@ async function demarrerServeur() {
   try {
     // Initialiser le gestionnaire STL
     await initialiserGestionnaireSTL();
-    
-    console.log("Chemin de base des fichiers STL:", cheminBase);
-    console.log("Dossier des modèles:", modelsPath);
+
+    logToFile(`Chemin de base des fichiers STL: ${cheminBase}`);
+    logToFile(`Dossier des modèles: ${modelsPath}`);
 
     // Synchronisation initiale
     await synchroniserFichiers();
@@ -337,12 +445,92 @@ async function demarrerServeur() {
     setInterval(synchroniserFichiers, 30000);
 
     appExpress.listen(port, () => {
-      console.log(`Serveur démarré sur le port ${port}`);
+      logToFile(`Serveur démarré sur le port ${port}`);
     });
   } catch (error) {
-    console.error("Erreur lors du démarrage du serveur:", error);
+    logToFile(`Erreur lors du démarrage du serveur: ${error}`);
   }
 }
+
+// Routes pour la gestion des dossiers surveillés
+appExpress.get("/api/watch-config", async (req, res) => {
+  try {
+    const watchConfigPath = path.join(__dirname, "watch-config.json");
+    if (fsSync.existsSync(watchConfigPath)) {
+      const config = JSON.parse(await fs.readFile(watchConfigPath, "utf8"));
+      res.json(config);
+    } else {
+      res.json({ watchDirectories: [] });
+    }
+  } catch (error) {
+    logToFile(`Erreur lors de la lecture de la configuration: ${error}`);
+    res
+      .status(500)
+      .json({ error: "Erreur lors de la lecture de la configuration" });
+  }
+});
+
+appExpress.post("/api/watch-config", async (req, res) => {
+  try {
+    const watchConfigPath = path.join(__dirname, "watch-config.json");
+    const newConfig = req.body;
+    await fs.writeFile(watchConfigPath, JSON.stringify(newConfig, null, 2));
+    watchConfig = newConfig;
+    res.json(newConfig);
+  } catch (error) {
+    logToFile(`Erreur lors de la mise à jour de la configuration: ${error}`);
+    res
+      .status(500)
+      .json({ error: "Erreur lors de la mise à jour de la configuration" });
+  }
+});
+
+appExpress.post("/api/watch-directory", async (req, res) => {
+  try {
+    const { path: dirPath, description } = req.body;
+    if (!dirPath) {
+      return res.status(400).json({ error: "Le chemin est requis" });
+    }
+
+    const newDir = {
+      id: uuidv4(),
+      path: dirPath,
+      description: description || "Nouveau dossier surveillé",
+      active: true,
+    };
+
+    watchConfig.watchDirectories.push(newDir);
+    const watchConfigPath = path.join(__dirname, "watch-config.json");
+    await fs.writeFile(watchConfigPath, JSON.stringify(watchConfig, null, 2));
+
+    res.json(newDir);
+  } catch (error) {
+    logToFile(`Erreur lors de l'ajout du dossier: ${error}`);
+    res.status(500).json({ error: "Erreur lors de l'ajout du dossier" });
+  }
+});
+
+appExpress.delete("/api/watch-directory/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const dirIndex = watchConfig.watchDirectories.findIndex(
+      (dir) => dir.id === id
+    );
+
+    if (dirIndex === -1) {
+      return res.status(404).json({ error: "Dossier non trouvé" });
+    }
+
+    watchConfig.watchDirectories.splice(dirIndex, 1);
+    const watchConfigPath = path.join(__dirname, "watch-config.json");
+    await fs.writeFile(watchConfigPath, JSON.stringify(watchConfig, null, 2));
+
+    res.json({ success: true });
+  } catch (error) {
+    logToFile(`Erreur lors de la suppression du dossier: ${error}`);
+    res.status(500).json({ error: "Erreur lors de la suppression du dossier" });
+  }
+});
 
 // Démarrer le serveur
 demarrerServeur();

@@ -11,7 +11,7 @@ const ModelList = ({ models = [], onEdit, onDelete }) => {
   }, [models]);
 
   const handleModelUpdate = (updatedModel) => {
-    if (!updatedModel || !updatedModel.nom) {
+    if (!updatedModel || (!updatedModel.nom && !updatedModel.name)) {
       console.warn('Tentative de mise à jour avec un modèle invalide:', updatedModel);
       return;
     }
@@ -21,8 +21,10 @@ const ModelList = ({ models = [], onEdit, onDelete }) => {
       const currentModels = Array.isArray(prevModels) ? prevModels : [];
       
       return currentModels.map(model => {
-        if (!model || !model.nom) return model;
-        return model.nom === updatedModel.nom ? updatedModel : model;
+        if (!model || (!model.nom && !model.name)) return model;
+        const modelId = model.nom || model.name;
+        const updatedId = updatedModel.nom || updatedModel.name;
+        return modelId === updatedId ? updatedModel : model;
       });
     });
   };
@@ -40,14 +42,14 @@ const ModelList = ({ models = [], onEdit, onDelete }) => {
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
       {localModels.map((model) => {
         // Vérifier que le modèle est valide avant de le rendre
-        if (!model || !model.nom) {
+        if (!model || (!model.nom && !model.name)) {
           console.warn('Modèle invalide détecté:', model);
           return null;
         }
 
         return (
           <ModelCard
-            key={model.nom}
+            key={model.id || model.nom || model.name}
             model={model}
             onEdit={onEdit}
             onDelete={onDelete}
