@@ -23,82 +23,127 @@ const PORT = 3001;
 // Activation de CORS pour permettre les requêtes depuis le frontend
 app.use(cors());
 
-// Dossier source des fichiers STL
-const SOURCE_DIRECTORY = "C:\\Users\\Quentin\\Documents\\fichier3d";
-// Dossier où sont stockés les fichiers STL
+// Lecture de la configuration
+const configPath = join(__dirname, "src", "server", "config.json");
+const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+
+// Dossiers source des fichiers
+const SOURCE_DIRECTORY = config.cheminBase;
+const METADATA_DIRECTORY = join(SOURCE_DIRECTORY, "metadata");
 const STL_DIRECTORY = join(__dirname, "stl-files");
+const STL_METADATA_DIRECTORY = join(STL_DIRECTORY, "metadata");
 
-// Création du dossier s'il n'existe pas
-if (!existsSync(STL_DIRECTORY)) {
-  mkdirSync(STL_DIRECTORY);
-}
+// Création des dossiers nécessaires
+[STL_DIRECTORY, STL_METADATA_DIRECTORY].forEach((dir) => {
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+});
 
-// Fonction pour copier les fichiers STL
-const copySTLFiles = async () => {
+// Fonction pour synchroniser les fichiers
+const syncFiles = async () => {
   try {
-    console.log(`Vérification du dossier source: ${SOURCE_DIRECTORY}`);
-    // Vérifier si le dossier source existe
-    if (!existsSync(SOURCE_DIRECTORY)) {
-      console.error(`Le dossier source n'existe pas: ${SOURCE_DIRECTORY}`);
+    console.log("Début de la synchronisation...");
+    console.log(`Dossier source STL: ${SOURCE_DIRECTORY}`);
+    console.log(`Dossier source metadata: ${METADATA_DIRECTORY}`);
+    console.log(`Dossier destination STL: ${STL_DIRECTORY}`);
+    console.log(`Dossier destination metadata: ${STL_METADATA_DIRECTORY}`);
+
+    // Vérification des dossiers source
+    if (!existsSync(SOURCE_DIRECTORY) || !existsSync(METADATA_DIRECTORY)) {
+      console.error("Dossiers source manquants!");
       return;
     }
 
-    console.log('Lecture du dossier source...');
-    const files = await readdirAsync(SOURCE_DIRECTORY);
-    console.log(`Fichiers trouvés dans le dossier: ${files.join(', ')}`);
-    
-    const stlFiles = files.filter((file) =>
-      file.toLowerCase().endsWith(".stl")
-    );
+    // Lecture des fichiers
+    const sourceStlFiles = await readdirAsync(SOURCE_DIRECTORY);
+    const sourceMetadataFiles = await readdirAsync(METADATA_DIRECTORY);
+    const destStlFiles = existsSync(STL_DIRECTORY)
+      ? await readdirAsync(STL_DIRECTORY)
+      : [];
+    const destMetadataFiles = existsSync(STL_METADATA_DIRECTORY)
+      ? await readdirAsync(STL_METADATA_DIRECTORY)
+      : [];
 
-    console.log(`Fichiers STL trouvés: ${stlFiles.length}`);
-    console.log(`Liste des fichiers STL: ${stlFiles.join(', ')}`);
-
-    for (const file of stlFiles) {
-      const sourcePath = join(SOURCE_DIRECTORY, file);
-      const targetPath = join(STL_DIRECTORY, file);
-
-      try {
-        // Vérifier si le fichier existe déjà et si sa taille est différente
+    // Synchronisation des fichiers STL
+    for (const file of sourceStlFiles) {
+      if (file.toLowerCase().endsWith(".stl")) {
+        const sourcePath = join(SOURCE_DIRECTORY, file);
+        const destPath = join(STL_DIRECTORY, file);
         const sourceStats = statSync(sourcePath);
-        const targetExists = existsSync(targetPath);
-        const targetStats = targetExists ? statSync(targetPath) : null;
 
-        if (!targetExists || sourceStats.size !== targetStats?.size) {
-          copyFileSync(sourcePath, targetPath);
-          console.log(`Fichier copié avec succès: ${file}`);
-        } else {
-          console.log(`Le fichier existe déjà et n'a pas changé: ${file}`);
+        if (
+          !destStlFiles.includes(file) ||
+          (destStlFiles.includes(file) &&
+            sourceStats.mtime > statSync(destPath).mtime)
+        ) {
+          console.log(`Copie du fichier STL: ${file}`);
+          copyFileSync(sourcePath, destPath);
         }
-      } catch (err) {
-        console.error(`Erreur lors de la copie de ${file}:`, err);
+
+        // Recherche et copie du fichier JSON associé
+        const jsonFile = `${file}.json`;
+        if (sourceMetadataFiles.includes(jsonFile)) {
+          const sourceJsonPath = join(METADATA_DIRECTORY, jsonFile);
+          const destJsonPath = join(STL_METADATA_DIRECTORY, jsonFile);
+          console.log(`Copie du fichier metadata: ${jsonFile}`);
+          copyFileSync(sourceJsonPath, destJsonPath);
+        }
       }
     }
+
+    // Synchronisation inverse (destination vers source)
+    for (const file of destStlFiles) {
+      if (file.toLowerCase().endsWith(".stl")) {
+        const sourcePath = join(SOURCE_DIRECTORY, file);
+        const destPath = join(STL_DIRECTORY, file);
+
+        if (!sourceStlFiles.includes(file)) {
+          console.log(`Synchronisation inverse du fichier STL: ${file}`);
+          copyFileSync(destPath, sourcePath);
+
+          // Copie du fichier JSON associé s'il existe
+          const jsonFile = `${file}.json`;
+          if (destMetadataFiles.includes(jsonFile)) {
+            const sourceJsonPath = join(METADATA_DIRECTORY, jsonFile);
+            const destJsonPath = join(STL_METADATA_DIRECTORY, jsonFile);
+            console.log(`Synchronisation inverse du metadata: ${jsonFile}`);
+            copyFileSync(destJsonPath, sourceJsonPath);
+          }
+        }
+      }
+    }
+
+    console.log("Synchronisation terminée avec succès");
   } catch (error) {
-    console.error("Erreur lors de la lecture du dossier source:", error);
+    console.error("Erreur lors de la synchronisation:", error);
   }
 };
 
-// Copier les fichiers au démarrage
-copySTLFiles();
+// Route pour synchroniser les fichiers
+app.get("/sync", (req, res) => {
+  syncFiles()
+    .then(() => res.json({ success: true }))
+    .catch((error) => res.status(500).json({ error: error.message }));
+});
 
-// Surveiller le dossier source pour les changements
-let watchTimeout;
-try {
-  watch(SOURCE_DIRECTORY, (eventType, filename) => {
-    if (filename && filename.toLowerCase().endsWith(".stl")) {
-      // Debounce pour éviter les copies multiples
-      clearTimeout(watchTimeout);
-      watchTimeout = setTimeout(() => {
-        console.log(`Changement détecté dans le fichier: ${filename}`);
-        copySTLFiles();
-      }, 1000);
-    }
-  });
-  console.log(`Surveillance du dossier source activée: ${SOURCE_DIRECTORY}`);
-} catch (error) {
-  console.error("Erreur lors de la mise en place de la surveillance:", error);
-}
+// Synchronisation initiale
+syncFiles();
+
+// Surveillance des changements
+watch(SOURCE_DIRECTORY, (eventType, filename) => {
+  if (filename) {
+    console.log(`Changement détecté dans le dossier source: ${filename}`);
+    syncFiles();
+  }
+});
+
+watch(METADATA_DIRECTORY, (eventType, filename) => {
+  if (filename) {
+    console.log(`Changement détecté dans le dossier metadata: ${filename}`);
+    syncFiles();
+  }
+});
 
 // Route pour lister les fichiers STL
 app.get("/api/models", async (req, res) => {
@@ -112,7 +157,7 @@ app.get("/api/models", async (req, res) => {
     const modelsPromises = stlFiles.map(async (file) => {
       const filePath = join(STL_DIRECTORY, file);
       const stats = statSync(filePath);
-      const metadataPath = join(STL_DIRECTORY, `${file}.metadata.json`);
+      const metadataPath = join(STL_METADATA_DIRECTORY, `${file}.json`);
 
       let metadata = {
         name: file.replace(".STL", ""),
@@ -164,7 +209,7 @@ app.put("/api/models/:id", express.json(), async (req, res) => {
 
     // Dans une vraie application, vous stockeriez ces métadonnées dans une base de données
     // Pour l'instant, nous allons les stocker dans un fichier JSON à côté du fichier STL
-    const metadataPath = join(STL_DIRECTORY, `${id}.metadata.json`);
+    const metadataPath = join(STL_METADATA_DIRECTORY, `${id}.json`);
     const metadata = {
       id,
       name: name || id.replace(".STL", ""),
@@ -192,7 +237,7 @@ app.put("/api/models/:id", express.json(), async (req, res) => {
 // Route pour récupérer les métadonnées d'un modèle
 app.get("/api/models/:id/metadata", async (req, res) => {
   const { id } = req.params;
-  const metadataPath = join(STL_DIRECTORY, `${id}.metadata.json`);
+  const metadataPath = join(STL_METADATA_DIRECTORY, `${id}.json`);
 
   try {
     if (existsSync(metadataPath)) {

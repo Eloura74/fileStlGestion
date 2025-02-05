@@ -6,7 +6,7 @@ import {
 } from "@heroicons/react/24/outline";
 import STLViewer from "../STLViewer/STLViewer";
 
-const WATCH_DIR = "C:\\Users\\Quentin\\Documents\\fichier3d";
+const WATCH_DIR = "C:\\Users\\faber\\Documents\\fichier3d";
 
 const ModelCard = ({ model, onEdit, onDelete, setModel }) => {
   const [isHovered, setIsHovered] = useState(false);
