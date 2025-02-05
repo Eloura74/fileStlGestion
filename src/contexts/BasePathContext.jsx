@@ -17,9 +17,19 @@ export const BasePathProvider = ({ children }) => {
   useEffect(() => {
     // Récupérer le chemin de base depuis le serveur au démarrage
     fetch('http://localhost:3001/api/config/base-path')
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
       .then(data => {
-        setBasePath(data.basePath);
+        if (data && typeof data.basePath === 'string') {
+          setBasePath(data.basePath);
+        } else {
+          console.warn('Format de données invalide pour le chemin de base');
+          setBasePath('');
+        }
         setIsLoading(false);
       })
       .catch(error => {

@@ -24,7 +24,7 @@ const PORT = 3001;
 app.use(cors());
 
 // Dossier source des fichiers STL
-const SOURCE_DIRECTORY = "C:\\Users\\faber\\Documents\\fichier3d";
+const SOURCE_DIRECTORY = "C:\\Users\\Quentin\\Documents\\fichier3d";
 // Dossier où sont stockés les fichiers STL
 const STL_DIRECTORY = join(__dirname, "stl-files");
 
@@ -36,18 +36,23 @@ if (!existsSync(STL_DIRECTORY)) {
 // Fonction pour copier les fichiers STL
 const copySTLFiles = async () => {
   try {
+    console.log(`Vérification du dossier source: ${SOURCE_DIRECTORY}`);
     // Vérifier si le dossier source existe
     if (!existsSync(SOURCE_DIRECTORY)) {
       console.error(`Le dossier source n'existe pas: ${SOURCE_DIRECTORY}`);
       return;
     }
 
+    console.log('Lecture du dossier source...');
     const files = await readdirAsync(SOURCE_DIRECTORY);
+    console.log(`Fichiers trouvés dans le dossier: ${files.join(', ')}`);
+    
     const stlFiles = files.filter((file) =>
       file.toLowerCase().endsWith(".stl")
     );
 
     console.log(`Fichiers STL trouvés: ${stlFiles.length}`);
+    console.log(`Liste des fichiers STL: ${stlFiles.join(', ')}`);
 
     for (const file of stlFiles) {
       const sourcePath = join(SOURCE_DIRECTORY, file);
@@ -103,6 +108,7 @@ app.get("/api/models", async (req, res) => {
       file.toLowerCase().endsWith(".stl")
     );
 
+    // Parcourir les fichiers STL et les métadonnées
     const modelsPromises = stlFiles.map(async (file) => {
       const filePath = join(STL_DIRECTORY, file);
       const stats = statSync(filePath);

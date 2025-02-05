@@ -72,7 +72,7 @@ function Model({ url }) {
   return (
     <mesh ref={meshRef} geometry={geometry} rotation={[0, Math.PI / 4, 0]}>
       <meshStandardMaterial
-        color="#6366f1"
+        color="#6f6f8c"
         roughness={0.5}
         metalness={0.6}
         envMapIntensity={0.5}
@@ -126,30 +126,31 @@ const STLViewer = ({ url, className = "" }) => {
 
   return (
     <div
-      className={`${className} w-full h-full bg-gray-800 rounded-lg overflow-hidden`}
+      className={`${className} w-full h-full bg-gray-800 rounded-t-lg overflow-hidden`}
     >
       <Canvas ref={canvasRef}>
         <Suspense fallback={null}>
           <PerspectiveCamera makeDefault position={[1.5, 1.5, 1.5]} />
           <Stage
-            environment="city"
+            environment="sunset"
             intensity={0.5}
             adjustCamera={false}
-            shadows={false}
+            shadows={{ type: "accumulative", color: "black", opacity: 0.5 }}
+            contactShadow
           >
             <Model url={url} />
           </Stage>
           <OrbitControls
             enableZoom={true}
-            enablePan={false}
+            enablePan={true}
             autoRotate
             autoRotateSpeed={2}
             minPolarAngle={Math.PI / 4}
             maxPolarAngle={Math.PI / 1.5}
           />
         </Suspense>
-        <ambientLight intensity={0.5} />
-        <pointLight position={[10, 10, 10]} intensity={0.5} />
+        <ambientLight intensity={1.5} />
+        <pointLight position={[10, 10, 10]} intensity={1.5} />
       </Canvas>
     </div>
   );

@@ -62,9 +62,9 @@ const Models = ({ models, onEdit, onDelete, loading, error }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-white mb-8">Mes Modèles 3D</h1>
+        <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400 mb-8">Mes Modèles 3D</h1>
         
-        <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 mb-8">
+        <div className="bg-gray-900/40 backdrop-blur-md rounded-xl p-6 mb-8 border border-purple-500/10">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Filtres */}
             <div className="space-y-2">
@@ -74,7 +74,7 @@ const Models = ({ models, onEdit, onDelete, loading, error }) => {
               <select
                 value={filterTheme}
                 onChange={(e) => setFilterTheme(e.target.value)}
-                className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full bg-gray-800/50 border border-gray-700 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               >
                 {themes.map((theme) => (
                   <option key={theme} value={theme} className="bg-gray-800">
@@ -91,7 +91,7 @@ const Models = ({ models, onEdit, onDelete, loading, error }) => {
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="w-full bg-gray-700/50 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full bg-gray-800/50 border border-gray-700 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               >
                 {categories.map((cat) => (
                   <option key={cat} value={cat} className="bg-gray-800">
@@ -110,7 +110,7 @@ const Models = ({ models, onEdit, onDelete, loading, error }) => {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="flex-1 bg-gray-700/50 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="flex-1 bg-gray-800/50 border border-gray-700 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
                   <option value="nom" className="bg-gray-800">Nom</option>
                   <option value="dateCreation" className="bg-gray-800">Date</option>
@@ -118,7 +118,7 @@ const Models = ({ models, onEdit, onDelete, loading, error }) => {
                 </select>
                 <button
                   onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/25"
                 >
                   {sortOrder === "asc" ? "↑" : "↓"}
                 </button>
@@ -127,7 +127,7 @@ const Models = ({ models, onEdit, onDelete, loading, error }) => {
           </div>
         </div>
 
-        <div className="bg-gray-800/30 backdrop-blur-sm rounded-xl p-6">
+        <div className="bg-gray-900/40 backdrop-blur-md rounded-xl p-6 border border-purple-500/10">
           <ModelList models={filteredModels} onEdit={onEdit} onDelete={onDelete} />
         </div>
       </div>

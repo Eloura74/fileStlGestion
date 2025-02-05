@@ -37,8 +37,9 @@ function App() {
   const handleEdit = async (modelId, editData) => {
     try {
       console.log("Modification du modèle:", modelId, editData);
+      const encodedId = encodeURIComponent(modelId);
       const response = await fetch(
-        `http://localhost:3001/api/models/${modelId}`,
+        `http://localhost:3001/api/models/${encodedId}`,
         {
           method: "PUT",
           headers: {
@@ -50,17 +51,18 @@ function App() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(
-          errorData.error || "Erreur lors de la mise à jour du modèle"
-        );
+        throw new Error(errorData.error || "Erreur lors de la modification du modèle");
       }
 
-      // Recharger la liste des modèles après la modification
-      await fetchModels();
+      const data = await response.json();
+      // Mettre à jour la liste des modèles
+      setModels(models.map(model => 
+        model.id === modelId ? data.model : model
+      ));
+      return data;
     } catch (error) {
       console.error("Erreur lors de l'édition:", error);
-      setError(error.message);
-      throw error; // Propager l'erreur pour la gestion dans ModelCard
+      throw error;
     }
   };
 
@@ -95,7 +97,7 @@ function App() {
   return (
     <BasePathProvider>
       <Router>
-        <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/90 to-black">
           <Navigation />
           <div className="container mx-auto px-4">
             <Routes>

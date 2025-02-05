@@ -1,10 +1,11 @@
 {
-  "name": "modeles3d-platform-server",
+  "name": "server",
   "version": "1.0.0",
+  "description": "Serveur pour la gestion des fichiers STL",
   "main": "index.js",
   "type": "commonjs",
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.21.2"
+    "express": "^4.18.2"
   }
 }
