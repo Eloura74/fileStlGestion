@@ -1,7 +1,12 @@
 # Dépendances
-/node_modules
+
 /.pnp
 .pnp.js
+
+# Ignorer tous les dossiers node_modules à n'importe quel niveau
+node_modules/
+**/node_modules/
+
 
 # Tests
 /coverage
