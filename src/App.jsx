@@ -54,12 +54,15 @@ function App() {
         throw new Error(errorData.error || "Erreur lors de la modification du modèle");
       }
 
-      const data = await response.json();
-      // Mettre à jour la liste des modèles
-      setModels(models.map(model => 
-        model.id === modelId ? data.model : model
-      ));
-      return data;
+      const updatedModel = await response.json();
+      
+      // Mettre à jour la liste des modèles en utilisant le nom comme identifiant
+      setModels(models.map(model => {
+        const modelName = model.nom || model.name;
+        return modelName === modelId ? { ...model, ...updatedModel } : model;
+      }));
+      
+      return updatedModel;
     } catch (error) {
       console.error("Erreur lors de l'édition:", error);
       throw error;

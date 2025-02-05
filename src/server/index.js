@@ -5,6 +5,7 @@ const fsSync = require("fs");
 const path = require("path");
 const fileRoutes = require("./routes/fileRoutes");
 const { v4: uuidv4 } = require('uuid');
+const GestionSTL = require('./utils/stlMetadata');
 
 const appExpress = express();
 const port = 3001;
@@ -31,6 +32,32 @@ if (!fsSync.existsSync(modelsPath)) {
 // Configuration des routes statiques
 appExpress.use("/stl-files", express.static(modelsPath));
 appExpress.use("/models", express.static(modelsPath)); // Pour la rétrocompatibilité
+
+let cheminBase = '';
+
+// Charger la configuration au démarrage
+async function chargerConfiguration() {
+  try {
+    const configPath = path.join(__dirname, "config.json");
+    if (fsSync.existsSync(configPath)) {
+      const config = JSON.parse(await fs.readFile(configPath, "utf8"));
+      cheminBase = config.cheminBase || "";
+    }
+  } catch (error) {
+    console.error("Erreur lors du chargement de la configuration:", error);
+  }
+}
+
+// Initialiser le gestionnaire STL avec le dossier source
+let gestionnaireSTL;
+
+// Fonction pour initialiser le gestionnaire STL
+async function initialiserGestionnaireSTL() {
+  await chargerConfiguration();
+  gestionnaireSTL = new GestionSTL(modelsPath, cheminBase);
+  await gestionnaireSTL.initialiserTousLesFichiers();
+  console.log('Métadonnées STL initialisées avec succès');
+}
 
 // Route pour récupérer le chemin de base
 appExpress.get("/api/config/base-path", (req, res) => {
@@ -64,64 +91,112 @@ appExpress.use("/api", fileRoutes);
 
 // Variables globales
 const configPath = path.join(__dirname, "config.json");
-let cheminBase = path.join(__dirname, "..", "..", "stl-files");
 
-// Charger la configuration au démarrage
-async function chargerConfiguration() {
+// Endpoint pour lister les modèles
+appExpress.get("/api/models", async (req, res) => {
   try {
-    if (fsSync.existsSync(configPath)) {
-      const configContent = await fs.readFile(configPath, "utf8");
-      const config = JSON.parse(configContent);
+    console.log("Récupération de la liste des modèles...");
+    const files = await fs.readdir(modelsPath);
+    const modelPromises = files
+      .filter((file) => file.toLowerCase().endsWith(".stl"))
+      .map(async (file) => {
+        const filePath = path.join(modelsPath, file);
+        const stats = await fs.stat(filePath);
+        const metadata = await gestionnaireSTL.getMetadata(file) || {};
+        
+        return {
+          id: encodeURIComponent(file),
+          name: file,
+          path: filePath,
+          size: stats.size,
+          lastModified: stats.mtime,
+          ...metadata
+        };
+      });
 
-      if (config.cheminBase && fsSync.existsSync(config.cheminBase)) {
-        cheminBase = config.cheminBase;
-        console.log(
-          "Configuration chargée avec succès. Chemin de base:",
-          cheminBase
-        );
-      } else {
-        console.log(
-          "Chemin de base invalide dans la configuration, utilisation du chemin par défaut:",
-          cheminBase
-        );
-        // Si le chemin n'existe pas, on le crée
-        if (config.cheminBase) {
-          try {
-            await fs.mkdir(config.cheminBase, { recursive: true });
-            cheminBase = config.cheminBase;
-            console.log("Dossier créé avec succès:", cheminBase);
-          } catch (error) {
-            console.error("Erreur lors de la création du dossier:", error);
-          }
-        }
-      }
-    } else {
-      console.log(
-        "Fichier de configuration non trouvé, création avec le chemin par défaut:",
-        cheminBase
-      );
-      await sauvegarderConfiguration();
+    const models = await Promise.all(modelPromises);
+    res.json(models);
+  } catch (error) {
+    console.error("Erreur lors de la récupération des modèles:", error);
+    res.status(500).json({ error: "Erreur lors de la récupération des modèles" });
+  }
+});
+
+// Endpoint pour mettre à jour un modèle
+appExpress.put("/api/models/:id", async (req, res) => {
+  try {
+    const modelId = decodeURIComponent(req.params.id);
+    const updateData = req.body;
+    console.log("Modification du modèle:", modelId, updateData);
+
+    const oldFilePath = path.join(modelsPath, modelId);
+    const oldSourcePath = path.join(cheminBase, modelId);
+
+    if (!fsSync.existsSync(oldFilePath)) {
+      return res.status(404).json({ error: "Modèle non trouvé" });
     }
-  } catch (error) {
-    console.error("Erreur lors du chargement de la configuration:", error);
-    console.log("Utilisation du chemin par défaut:", cheminBase);
-    await sauvegarderConfiguration();
-  }
-}
 
-// Sauvegarder la configuration
-async function sauvegarderConfiguration() {
-  try {
-    const config = {
-      cheminBase,
-      lastUpdate: new Date().toISOString(),
+    // Si le nom a été modifié, renommer le fichier
+    let currentModelId = modelId;
+    if (updateData.nom && updateData.nom !== modelId) {
+      const newFilePath = path.join(modelsPath, updateData.nom);
+      const newSourcePath = path.join(cheminBase, updateData.nom);
+
+      // Renommer dans le dossier de l'application
+      await fs.rename(oldFilePath, newFilePath);
+      
+      // Renommer dans le dossier source
+      if (fsSync.existsSync(oldSourcePath)) {
+        await fs.rename(oldSourcePath, newSourcePath);
+      }
+
+      // Mettre à jour l'ID du modèle
+      currentModelId = updateData.nom;
+
+      // Renommer les fichiers de métadonnées
+      const oldMetadataName = `${path.parse(modelId).name}.json`;
+      const newMetadataName = `${path.parse(updateData.nom).name}.json`;
+      const oldMetadataPath = path.join(modelsPath, 'metadata', oldMetadataName);
+      const newMetadataPath = path.join(modelsPath, 'metadata', newMetadataName);
+      const oldSourceMetadataPath = path.join(cheminBase, 'metadata', oldMetadataName);
+      const newSourceMetadataPath = path.join(cheminBase, 'metadata', newMetadataName);
+
+      if (fsSync.existsSync(oldMetadataPath)) {
+        await fs.rename(oldMetadataPath, newMetadataPath);
+      }
+      if (fsSync.existsSync(oldSourceMetadataPath)) {
+        await fs.rename(oldSourceMetadataPath, newSourceMetadataPath);
+      }
+    }
+
+    // Mettre à jour les métadonnées
+    await gestionnaireSTL.mettreAJourMetadata(currentModelId, updateData);
+
+    // Obtenir les métadonnées mises à jour
+    const metadata = await gestionnaireSTL.getMetadata(currentModelId);
+    const stats = await fs.stat(path.join(modelsPath, currentModelId));
+
+    // Synchroniser les métadonnées
+    await gestionnaireSTL.synchroniserMetadonnees();
+
+    // Préparer la réponse avec toutes les données nécessaires
+    const updatedModel = {
+      nom: currentModelId,
+      name: currentModelId,
+      path: path.join(modelsPath, currentModelId),
+      taille: stats.size,
+      size: stats.size,
+      dateModification: stats.mtime,
+      lastModified: stats.mtime,
+      ...metadata
     };
-    await fs.writeFile(configPath, JSON.stringify(config, null, 2));
-    console.log("Configuration sauvegardée avec succès");
+
+    res.json(updatedModel);
   } catch (error) {
-    console.error("Erreur lors de la sauvegarde de la configuration:", error);
+    console.error("Erreur lors de la modification du modèle:", error);
+    res.status(500).json({ error: "Erreur lors de la modification du modèle: " + error.message });
   }
-}
+});
 
 // Fonction pour créer le fichier metadata.json
 async function createMetadataFile(filePath) {
@@ -196,175 +271,6 @@ async function copyFileWithMetadata(sourcePath) {
   }
 }
 
-// Endpoint pour lister les modèles
-appExpress.get("/api/models", async (req, res) => {
-  try {
-    console.log("Récupération de la liste des modèles...");
-    const files = await fs.readdir(modelsPath);
-    const models = [];
-
-    for (const file of files) {
-      if (file.toLowerCase().endsWith('.stl')) {
-        const filePath = path.join(modelsPath, file);
-        const stats = await fs.stat(filePath);
-        const metadataPath = `${filePath}.metadata.json`;
-        console.log("Recherche des métadonnées:", metadataPath);
-
-        let metadata = {
-          id: file, // Utiliser le nom du fichier comme ID par défaut
-          nom: file,
-          format: "STL",
-          taille: stats.size,
-          dateCreation: stats.birthtime,
-          dateModification: stats.mtime,
-          categorie: "filament",
-          theme: "autre",
-          fileUrl: `http://localhost:3001/stl-files/${encodeURIComponent(file)}`
-        };
-
-        try {
-          if (fsSync.existsSync(metadataPath)) {
-            const metadataContent = await fs.readFile(metadataPath, 'utf8');
-            const existingMetadata = JSON.parse(metadataContent);
-            
-            // Si pas d'ID dans les métadonnées existantes, en créer un
-            if (!existingMetadata.id) {
-              existingMetadata.id = file;
-              await fs.writeFile(metadataPath, JSON.stringify(existingMetadata, null, 2));
-            }
-            
-            metadata = { ...metadata, ...existingMetadata };
-          } else {
-            // Créer le fichier metadata s'il n'existe pas
-            await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
-          }
-        } catch (metadataError) {
-          console.error("Erreur lors de la lecture des métadonnées:", metadataError);
-        }
-
-        models.push(metadata);
-      }
-    }
-
-    console.log("Modèles trouvés:", models.map(m => ({ id: m.id, nom: m.nom })));
-    res.json(models);
-  } catch (error) {
-    console.error("Erreur lors de la récupération des modèles:", error);
-    res.status(500).json({ error: "Erreur lors de la récupération des modèles" });
-  }
-});
-
-// Route pour modifier un modèle
-appExpress.put("/api/models/:id", async (req, res) => {
-  try {
-    const modelId = decodeURIComponent(req.params.id);
-    const updateData = req.body;
-    console.log("Modification du modèle:", modelId, updateData);
-
-    // Trouver le fichier correspondant à l'ID dans les métadonnées
-    const files = await fs.readdir(modelsPath);
-    let currentFile = null;
-    let currentMetadata = null;
-
-    for (const file of files) {
-      if (file.toLowerCase().endsWith('.stl')) {
-        const metadataPath = path.join(modelsPath, `${file}.metadata.json`);
-        if (fsSync.existsSync(metadataPath)) {
-          try {
-            const metadata = JSON.parse(await fs.readFile(metadataPath, 'utf8'));
-            // Comparer avec le nom du fichier si pas d'ID
-            if (metadata.id === modelId || (!metadata.id && file === modelId)) {
-              currentFile = file;
-              currentMetadata = metadata;
-              // Si pas d'ID, en créer un
-              if (!metadata.id) {
-                metadata.id = uuidv4();
-                currentMetadata = metadata;
-                await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
-              }
-              break;
-            }
-          } catch (err) {
-            console.warn(`Erreur de lecture des métadonnées pour ${file}:`, err);
-          }
-        }
-      }
-    }
-
-    if (!currentFile || !currentMetadata) {
-      console.error("Modèle non trouvé:", modelId);
-      return res.status(404).json({ error: "Modèle non trouvé" });
-    }
-
-    // Construire les chemins
-    const currentPath = path.join(modelsPath, currentFile);
-    const currentMetadataPath = `${currentPath}.metadata.json`;
-
-    // Si le nom a changé, renommer le fichier
-    if (updateData.nom && updateData.nom !== currentFile) {
-      const newFileName = updateData.nom.toLowerCase().endsWith('.stl') 
-        ? updateData.nom 
-        : `${updateData.nom}.stl`;
-      const newPath = path.join(modelsPath, newFileName);
-      const newMetadataPath = `${newPath}.metadata.json`;
-
-      // Vérifier si le nouveau nom n'existe pas déjà
-      if (fsSync.existsSync(newPath)) {
-        return res.status(400).json({ 
-          error: "Un fichier avec ce nom existe déjà" 
-        });
-      }
-
-      try {
-        // Renommer le fichier et ses métadonnées
-        await fs.rename(currentPath, newPath);
-        await fs.rename(currentMetadataPath, newMetadataPath);
-
-        // Renommer également dans le dossier source
-        const sourceFile = path.join(cheminBase, currentFile);
-        const newSourceFile = path.join(cheminBase, newFileName);
-        if (fsSync.existsSync(sourceFile)) {
-          await fs.rename(sourceFile, newSourceFile);
-        }
-
-        // Mettre à jour les métadonnées
-        const updatedMetadata = {
-          ...currentMetadata,
-          nom: newFileName,
-          categorie: updateData.categorie || currentMetadata.categorie,
-          theme: updateData.theme || currentMetadata.theme,
-          dateModification: new Date().toISOString(),
-          taille: (await fs.stat(newPath)).size
-        };
-
-        await fs.writeFile(newMetadataPath, JSON.stringify(updatedMetadata, null, 2));
-        return res.json({ success: true, model: updatedMetadata });
-      } catch (error) {
-        console.error("Erreur lors du renommage:", error);
-        return res.status(500).json({
-          error: "Erreur lors du renommage du fichier: " + error.message
-        });
-      }
-    } else {
-      // Si seules les métadonnées sont modifiées
-      const updatedMetadata = {
-        ...currentMetadata,
-        categorie: updateData.categorie || currentMetadata.categorie,
-        theme: updateData.theme || currentMetadata.theme,
-        dateModification: new Date().toISOString()
-      };
-
-      await fs.writeFile(currentMetadataPath, JSON.stringify(updatedMetadata, null, 2));
-      return res.json({ success: true, model: updatedMetadata });
-    }
-  } catch (error) {
-    console.error("Erreur lors de la modification:", error);
-    res.status(500).json({
-      error: "Erreur lors de la modification du modèle: " + error.message,
-    });
-  }
-});
-
 // Fonction pour synchroniser les fichiers
 async function synchroniserFichiers() {
   try {
@@ -400,8 +306,8 @@ async function synchroniserFichiers() {
           await fs.copyFile(cheminSource, cheminDestination);
           console.log(`Fichier ${fichier} copié avec succès`);
 
-          // Créer ou mettre à jour les métadonnées
-          await createMetadataFile(cheminDestination);
+          // Synchroniser les métadonnées
+          await gestionnaireSTL.synchroniserMetadonnees();
         } else {
           console.log(`Le fichier ${fichier} existe déjà et est à jour`);
         }
@@ -418,7 +324,9 @@ async function synchroniserFichiers() {
 // Démarrer la synchronisation au démarrage du serveur et toutes les 30 secondes
 async function demarrerServeur() {
   try {
-    await chargerConfiguration();
+    // Initialiser le gestionnaire STL
+    await initialiserGestionnaireSTL();
+    
     console.log("Chemin de base des fichiers STL:", cheminBase);
     console.log("Dossier des modèles:", modelsPath);
 

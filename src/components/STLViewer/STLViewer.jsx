@@ -1,148 +1,58 @@
-import React, { useRef, useState, Suspense } from "react";
-import { Canvas } from "@react-three/fiber";
-import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
-import { OrbitControls, Stage, PerspectiveCamera } from "@react-three/drei";
-import * as THREE from "three";
+import React, { useRef, Suspense } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
+import { OrbitControls, Stage, PerspectiveCamera } from '@react-three/drei';
+import * as THREE from 'three';
 
-function Model({ url }) {
-  const [geometry, setGeometry] = useState(null);
-  const [error, setError] = useState(null);
+function Model({ url, modelColor = '#9333ea' }) {
   const meshRef = useRef();
+  const [geometry, setGeometry] = React.useState(null);
 
   React.useEffect(() => {
     const loader = new STLLoader();
-    try {
-      loader.load(
-        url,
-        (geometry) => {
-          try {
-            geometry.computeVertexNormals();
-            // Centrer et ajuster l'échelle du modèle
-            geometry.center();
-            const box = new THREE.Box3().setFromObject(
-              new THREE.Mesh(geometry)
-            );
-            const size = box.getSize(new THREE.Vector3());
-            const maxSize = Math.max(size.x, size.y, size.z);
-            const scale = 1 / maxSize;
-            geometry.scale(scale, scale, scale);
-            setGeometry(geometry);
-            setError(null);
-          } catch (err) {
-            console.error("Erreur lors du traitement du modèle:", err);
-            setError(err);
-          }
-        },
-        undefined,
-        (error) => {
-          console.error("Erreur de chargement STL:", error);
-          setError(error);
-        }
-      );
-    } catch (err) {
-      console.error("Erreur critique lors du chargement:", err);
-      setError(err);
-    }
-
-    return () => {
-      if (geometry) {
-        geometry.dispose();
+    loader.load(
+      url,
+      (geometry) => {
+        geometry.computeVertexNormals();
+        setGeometry(geometry);
+      },
+      undefined,
+      (error) => {
+        console.error('Erreur de chargement STL:', error);
       }
-    };
+    );
   }, [url]);
 
-  if (error) {
-    return (
-      <mesh>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color="#ff0000" wireframe />
-      </mesh>
-    );
-  }
-
   if (!geometry) {
-    return (
-      <mesh>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color="#cccccc" wireframe />
-      </mesh>
-    );
+    return null;
   }
 
   return (
     <mesh ref={meshRef} geometry={geometry} rotation={[0, Math.PI / 4, 0]}>
-      <meshStandardMaterial
-        color="#6f6f8c"
-        roughness={0.5}
-        metalness={0.6}
-        envMapIntensity={0.5}
-      />
+      <meshStandardMaterial color={modelColor} roughness={0.5} metalness={0.6} />
     </mesh>
   );
 }
 
-const STLViewer = ({ url, className = "" }) => {
-  const canvasRef = useRef();
-  const [contextError, setContextError] = useState(false);
-
-  React.useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const handleContextLost = (event) => {
-      event.preventDefault();
-      console.warn("WebGL context lost.");
-      setContextError(true);
-    };
-
-    const handleContextRestored = () => {
-      console.log("WebGL context restored.");
-      setContextError(false);
-    };
-
-    canvas.addEventListener("webglcontextlost", handleContextLost);
-    canvas.addEventListener("webglcontextrestored", handleContextRestored);
-
-    return () => {
-      if (canvas) {
-        canvas.removeEventListener("webglcontextlost", handleContextLost);
-        canvas.removeEventListener(
-          "webglcontextrestored",
-          handleContextRestored
-        );
-      }
-    };
-  }, []);
-
-  if (contextError) {
-    return (
-      <div
-        className={`${className} w-full h-full bg-gray-800 rounded-lg overflow-hidden flex items-center justify-center`}
-      >
-        <p className="text-red-500 text-sm">Erreur d'affichage 3D</p>
-      </div>
-    );
-  }
-
+const STLViewer = ({ url, className = '', modelColor }) => {
   return (
-    <div
-      className={`${className} w-full h-full bg-gray-800 rounded-t-lg overflow-hidden`}
-    >
-      <Canvas ref={canvasRef}>
+    <div className={`${className} w-full h-full bg-gray-800 rounded-lg overflow-hidden`}>
+      <Canvas>
         <Suspense fallback={null}>
           <PerspectiveCamera makeDefault position={[1.5, 1.5, 1.5]} />
           <Stage
             environment="sunset"
             intensity={0.5}
             adjustCamera={false}
-            shadows={{ type: "accumulative", color: "black", opacity: 0.5 }}
+            shadows={{ type: 'accumulative', color: 'black', opacity: 0.5 }}
             contactShadow
           >
-            <Model url={url} />
+            <Model url={url} modelColor={modelColor} />
           </Stage>
           <OrbitControls
             enableZoom={true}
             enablePan={true}
+            enableRotate={true}
             autoRotate
             autoRotateSpeed={2}
             minPolarAngle={Math.PI / 4}
