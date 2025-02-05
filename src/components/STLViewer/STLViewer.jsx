@@ -1,10 +1,10 @@
-import React, { useRef, Suspense } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
-import { OrbitControls, Stage, PerspectiveCamera } from '@react-three/drei';
-import * as THREE from 'three';
+import React, { useRef, Suspense } from "react";
+import { Canvas } from "@react-three/fiber";
+import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
+import { OrbitControls, Stage, PerspectiveCamera } from "@react-three/drei";
+import * as THREE from "three";
 
-function Model({ url, modelColor = '#9333ea' }) {
+function Model({ url, modelColor = "#9333ea" }) {
   const meshRef = useRef();
   const [geometry, setGeometry] = React.useState(null);
 
@@ -13,12 +13,28 @@ function Model({ url, modelColor = '#9333ea' }) {
     loader.load(
       url,
       (geometry) => {
-        geometry.computeVertexNormals();
-        setGeometry(geometry);
+        try {
+          geometry.computeVertexNormals();
+          // Centrer le modèle
+          geometry.center();
+
+          // Calculer la boîte englobante
+          const box = new THREE.Box3().setFromObject(new THREE.Mesh(geometry));
+          const size = box.getSize(new THREE.Vector3());
+          const maxSize = Math.max(size.x, size.y, size.z);
+
+          // Ajuster l'échelle pour que le modèle soit plus petit
+          const scale = 1.3 / maxSize; // Réduire la taille à 30% de l'original
+          geometry.scale(scale, scale, scale);
+
+          setGeometry(geometry);
+        } catch (err) {
+          console.error("Erreur lors du traitement du modèle:", err);
+        }
       },
       undefined,
       (error) => {
-        console.error('Erreur de chargement STL:', error);
+        console.error("Erreur de chargement STL:", error);
       }
     );
   }, [url]);
@@ -29,14 +45,20 @@ function Model({ url, modelColor = '#9333ea' }) {
 
   return (
     <mesh ref={meshRef} geometry={geometry} rotation={[0, Math.PI / 4, 0]}>
-      <meshStandardMaterial color={modelColor} roughness={0.5} metalness={0.6} />
+      <meshStandardMaterial
+        color={modelColor}
+        roughness={0.5}
+        metalness={0.6}
+      />
     </mesh>
   );
 }
 
-const STLViewer = ({ url, className = '', modelColor }) => {
+const STLViewer = ({ url, className = "", modelColor }) => {
   return (
-    <div className={`${className} w-full h-full bg-gray-800 rounded-lg overflow-hidden`}>
+    <div
+      className={`${className} w-full h-full bg-gray-800 rounded-lg overflow-hidden`}
+    >
       <Canvas>
         <Suspense fallback={null}>
           <PerspectiveCamera makeDefault position={[1.5, 1.5, 1.5]} />
@@ -44,7 +66,7 @@ const STLViewer = ({ url, className = '', modelColor }) => {
             environment="sunset"
             intensity={0.5}
             adjustCamera={false}
-            shadows={{ type: 'accumulative', color: 'black', opacity: 0.5 }}
+            shadows={{ type: "accumulative", color: "black", opacity: 0.5 }}
             contactShadow
           >
             <Model url={url} modelColor={modelColor} />
