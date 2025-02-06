@@ -6,7 +6,8 @@ import {
 } from "@heroicons/react/24/outline";
 import STLViewer from "../STLViewer/STLViewer";
 
-const WATCH_DIR = "C:\\Users\\Quentin\\Documents\\fichier3d";
+const WATCH_DIR = import.meta.env.VITE_BASE_WATCH_DIRS;
+console.log("Répertoire surveillé :", WATCH_DIR);
 
 const ModelCard = ({ model, onEdit, onDelete, setModel }) => {
   const [isHovered, setIsHovered] = useState(false);
