@@ -6,7 +6,7 @@ import {
 } from "@heroicons/react/24/outline";
 import STLViewer from "../STLViewer/STLViewer";
 
-const WATCH_DIR = "C:\\Users\\faber\\Documents\\fichier3d";
+const WATCH_DIR = "C:\\Users\\Quentin\\Documents\\fichier3d";
 
 const ModelCard = ({ model, onEdit, onDelete, setModel }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -315,9 +315,9 @@ const ModelCard = ({ model, onEdit, onDelete, setModel }) => {
         </div>
         <div className="mb-4 h-64 relative">
           <STLViewer
-            url={`http://localhost:3001/stl-files/${encodeURIComponent(
-              model.nom || model.name
-            )}`}
+            url={`http://localhost:3001/models/${model.nom}${
+              model.nom.toLowerCase().endsWith(".stl") ? "" : ".stl"
+            }`}
             className="w-full h-full"
             modelColor="#9333ea"
           />

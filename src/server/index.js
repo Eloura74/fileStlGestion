@@ -75,34 +75,49 @@ BASE_WATCH_DIRS.forEach((dir, index) => {
 async function chargerConfiguration() {
   try {
     logToFile("=== Chargement de la configuration ===");
+    
+    // Utiliser directement la variable d'environnement pour le chemin de base
+    cheminBase = process.env.BASE_WATCH_DIR || "";
+    logToFile(`Chemin de base chargé depuis .env: ${cheminBase}`);
+
+    // Sauvegarder dans config.json
     const configPath = path.join(__dirname, "config.json");
-    if (fsSync.existsSync(configPath)) {
-      const config = JSON.parse(await fs.readFile(configPath, "utf8"));
-      cheminBase = config.cheminBase || "";
-      logToFile(`Configuration chargée: ${JSON.stringify(config)}`);
-    }
+    await fs.writeFile(
+      configPath,
+      JSON.stringify(
+        {
+          cheminBase: cheminBase,
+          lastUpdate: new Date().toISOString(),
+        },
+        null,
+        2
+      )
+    );
 
     // Charger la configuration des dossiers surveillés
     const watchConfigPath = path.join(__dirname, "watch-config.json");
-    if (fsSync.existsSync(watchConfigPath)) {
-      logToFile("Chargement de la configuration de surveillance");
-      watchConfig = JSON.parse(await fs.readFile(watchConfigPath, "utf8"));
-      logToFile(
-        `Dossiers configurés: ${JSON.stringify(watchConfig.watchDirectories)}`
-      );
-    } else {
-      logToFile("Création de la configuration de surveillance par défaut");
-      watchConfig = {
-        watchDirectories: BASE_WATCH_DIRS.map((path, index) => ({
-          id: `dir_${index}`,
-          path: path,
-          description: `Dossier STL ${index + 1}`,
-          active: true,
-        })),
-      };
-      logToFile(`Nouvelle configuration: ${JSON.stringify(watchConfig)}`);
-      await fs.writeFile(watchConfigPath, JSON.stringify(watchConfig, null, 2));
-    }
+    
+    // Créer la configuration avec les chemins depuis .env
+    const baseWatchDirs = process.env.BASE_WATCH_DIRS ? 
+      process.env.BASE_WATCH_DIRS.split(",") : 
+      [process.env.BASE_WATCH_DIR];
+
+    watchConfig = {
+      watchDirectories: baseWatchDirs.map((dirPath, index) => ({
+        id: `dir_${index}`,
+        path: dirPath.trim(),
+        description: `Dossier STL ${index + 1}`,
+        active: true,
+      })),
+    };
+
+    // Sauvegarder la nouvelle configuration
+    await fs.writeFile(
+      watchConfigPath,
+      JSON.stringify(watchConfig, null, 2)
+    );
+    
+    logToFile(`Configuration des dossiers mise à jour: ${JSON.stringify(watchConfig.watchDirectories)}`);
   } catch (error) {
     logToFile(`Erreur lors du chargement de la configuration: ${error}`);
   }
