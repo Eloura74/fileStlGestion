@@ -1,17 +1,9 @@
 {
-    "nom": "test2.stl",
-    "taille_bytes": 5089084,
-    "date_modification": "2023-10-18T21:36:35.304Z",
-    "description": "",
-    "categorie": "",
-    "theme": "autre",
-    "tags": [],
-    "auteur": "",
-    "date_creation": "2025-02-09T14:44:52.208Z",
-    "parametres_impression": {
-        "materiau": "",
-        "epaisseur_couche": "",
-        "remplissage": "",
-        "support": false
-    }
+  "nom": "test2.stl",
+  "dateModification": "2025-02-09T18:14:20.150Z",
+  "description": "",
+  "categorie": "filament",
+  "theme": "figurine",
+  "tags": [],
+  "auteur": ""
 }

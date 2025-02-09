@@ -1,7 +1,7 @@
 // Charger les variables d'environnement en premier
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, "../../.env") });
-const { exec } = require('child_process');
+const { exec } = require("child_process");
 
 // Afficher les variables d'environnement pour le débogage
 console.log("=== Variables d'environnement ===");
@@ -50,12 +50,16 @@ if (!fsSync.existsSync(modelsPath)) {
 
 // Configuration des routes statiques
 appExpress.use("/stl-files", express.static(modelsPath));
-appExpress.use("/models", (req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "http://localhost:5173");
-  res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
-  res.header("Access-Control-Allow-Headers", "Content-Type");
-  next();
-}, express.static(modelsPath)); // Pour la rétrocompatibilité
+appExpress.use(
+  "/models",
+  (req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "http://localhost:5173");
+    res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
+    res.header("Access-Control-Allow-Headers", "Content-Type");
+    next();
+  },
+  express.static(modelsPath)
+); // Pour la rétrocompatibilité
 
 // Configuration initiale
 const cheminBase = process.env.VITE_BASE_WATCH_DIRS || "C:/Users/faber/Documents/fichier3d"; // Chemin fixe vers fichier3d
@@ -63,11 +67,17 @@ console.log("=== Configuration des chemins ===");
 console.log("cheminBase:", cheminBase);
 console.log("modelsPath:", modelsPath);
 
+// Configuration de la surveillance des dossiers
+const watchConfig = {
+  watchDirectories: [],
+  initialized: false
+};
+
 // Fonction pour charger la configuration
 async function chargerConfiguration() {
   try {
     logToFile("=== Chargement de la configuration ===");
-    
+
     // Sauvegarder dans config.json
     const configPath = path.join(__dirname, "config.json");
     await fs.writeFile(
@@ -166,7 +176,7 @@ async function copyFile(source, destination) {
 async function syncFile(fileName, fromPath, toPath) {
   const sourceFile = path.join(fromPath, fileName);
   const destFile = path.join(toPath, fileName);
-  
+
   if (fsSync.existsSync(sourceFile)) {
     await copyFile(sourceFile, destFile);
     return true;
@@ -179,7 +189,7 @@ async function demarrerServeur() {
   try {
     // Initialiser les dossiers
     await initializeFolders();
-    
+
     console.log("Dossier surveillé :", cheminBase);
 
     // Obtenir les chemins de base depuis les variables d'environnement
@@ -212,7 +222,10 @@ async function demarrerServeur() {
         } else {
           // Si le fichier n'existe pas, créer une configuration par défaut
           const defaultConfig = { cheminBase: modelsPath };
-          fsSync.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2));
+          fsSync.writeFileSync(
+            configPath,
+            JSON.stringify(defaultConfig, null, 2)
+          );
           res.json({ basePath: modelsPath });
         }
       } catch (error) {
@@ -399,7 +412,9 @@ async function demarrerServeur() {
                   logToFile("Le fichier existe déjà dans la destination");
                 } catch {
                   destinationStats = null;
-                  logToFile("Le fichier n'existe pas encore dans la destination");
+                  logToFile(
+                    "Le fichier n'existe pas encore dans la destination"
+                  );
                 }
 
                 // Copier si le fichier n'existe pas ou si la taille est différente
@@ -437,13 +452,13 @@ async function demarrerServeur() {
         console.log("Nom du fichier demandé:", filename);
         console.log("Chemins de recherche actuels:", {
           cheminBase,
-          modelsPath
+          modelsPath,
         });
 
         // Vérifier d'abord dans le dossier cheminBase
         let filePath = path.join(cheminBase, filename);
         console.log("Chemin complet recherché:", filePath);
-        
+
         // Vérifier si le fichier existe
         const fileExists = fsSync.existsSync(filePath);
         console.log("Le fichier existe dans cheminBase:", fileExists);
@@ -464,33 +479,37 @@ async function demarrerServeur() {
               console.error("Erreur lors de la lecture du dossier:", error);
             }
 
-            return res.status(404).json({ 
-              success: false, 
+            return res.status(404).json({
+              success: false,
               message: "Fichier non trouvé dans les dossiers surveillés",
               searchedPaths: [
                 path.join(cheminBase, filename),
-                path.join(modelsPath, filename)
-              ]
+                path.join(modelsPath, filename),
+              ],
             });
           }
         }
 
-        console.log("Fichier trouvé, ouverture de l'explorateur avec:", filePath);
+        console.log(
+          "Fichier trouvé, ouverture de l'explorateur avec:",
+          filePath
+        );
         // Utiliser explorer.exe pour ouvrir le dossier et sélectionner le fichier
         exec(`explorer.exe /select,"${filePath}"`, (error) => {
           // On ignore l'erreur car explorer.exe ne renvoie pas de résultat
           // mais ouvre quand même l'explorateur
-          res.json({ 
-            success: true, 
+          res.json({
+            success: true,
             message: "Explorateur ouvert avec succès",
-            path: filePath
+            path: filePath,
           });
         });
       } catch (error) {
         console.error("Erreur serveur:", error);
-        res.status(500).json({ 
-          success: false, 
-          message: "Erreur lors de l'ouverture de l'explorateur: " + error.message 
+        res.status(500).json({
+          success: false,
+          message:
+            "Erreur lors de l'ouverture de l'explorateur: " + error.message,
         });
       }
     });
@@ -510,12 +529,12 @@ async function demarrerServeur() {
         // Si le nom a changé, renommer le fichier
         if (updateData.nom && updateData.nom !== modelId) {
           // Assurer que le nouveau nom a l'extension .stl
-          const newName = !updateData.nom.toLowerCase().endsWith('.stl') 
-            ? `${updateData.nom}.stl` 
+          const newName = !updateData.nom.toLowerCase().endsWith(".stl")
+            ? `${updateData.nom}.stl`
             : updateData.nom;
-          
+
           updateData.nom = newName; // Mettre à jour le nom avec l'extension
-          
+
           // Chemins dans le dossier de l'application
           const oldPath = path.join(modelsPath, modelId);
           const newPath = path.join(modelsPath, newName);
@@ -532,7 +551,7 @@ async function demarrerServeur() {
             oldSourcePath,
             newSourcePath,
             existsInApp: fsSync.existsSync(oldPath),
-            existsInSource: fsSync.existsSync(oldSourcePath)
+            existsInSource: fsSync.existsSync(oldSourcePath),
           });
 
           try {
@@ -551,17 +570,29 @@ async function demarrerServeur() {
             const metadata = {
               nom: newName,
               dateModification: new Date().toISOString(),
-              ...updateData
+              ...updateData,
             };
 
             // Chemins des métadonnées
             const metadataFileName = `${path.parse(newName).name}.json`;
-            const appMetadataPath = path.join(modelsPath, "metadata", metadataFileName);
-            const sourceMetadataPath = path.join(cheminBase, "metadata", metadataFileName);
+            const appMetadataPath = path.join(
+              modelsPath,
+              "metadata",
+              metadataFileName
+            );
+            const sourceMetadataPath = path.join(
+              cheminBase,
+              "metadata",
+              metadataFileName
+            );
 
             // Créer les dossiers metadata s'ils n'existent pas
-            await fs.mkdir(path.join(modelsPath, "metadata"), { recursive: true });
-            await fs.mkdir(path.join(cheminBase, "metadata"), { recursive: true });
+            await fs.mkdir(path.join(modelsPath, "metadata"), {
+              recursive: true,
+            });
+            await fs.mkdir(path.join(cheminBase, "metadata"), {
+              recursive: true,
+            });
 
             // Écrire les métadonnées dans les deux emplacements
             const metadataContent = JSON.stringify(metadata, null, 2);
@@ -572,7 +603,10 @@ async function demarrerServeur() {
             const mainMetadataPath = path.join(cheminBase, "metadata.json");
             let mainMetadata = {};
             try {
-              const mainMetadataContent = await fs.readFile(mainMetadataPath, 'utf8');
+              const mainMetadataContent = await fs.readFile(
+                mainMetadataPath,
+                "utf8"
+              );
               mainMetadata = JSON.parse(mainMetadataContent);
             } catch (error) {
               console.log("Création d'un nouveau metadata.json");
@@ -581,15 +615,17 @@ async function demarrerServeur() {
             // Supprimer l'ancienne entrée et ajouter la nouvelle
             delete mainMetadata[modelId];
             mainMetadata[newName] = metadata;
-            await fs.writeFile(mainMetadataPath, JSON.stringify(mainMetadata, null, 2));
+            await fs.writeFile(
+              mainMetadataPath,
+              JSON.stringify(mainMetadata, null, 2)
+            );
 
             console.log("Synchronisation terminée avec succès");
-
           } catch (error) {
             console.error("Erreur lors du renommage:", error);
             return res.status(500).json({
               success: false,
-              message: "Erreur lors du renommage du fichier: " + error.message
+              message: "Erreur lors du renommage du fichier: " + error.message,
             });
           }
         }
@@ -597,13 +633,13 @@ async function demarrerServeur() {
         res.json({
           success: true,
           message: "Modèle mis à jour avec succès",
-          data: updateData
+          data: updateData,
         });
       } catch (error) {
         console.error("Erreur lors de la mise à jour:", error);
         res.status(500).json({
           success: false,
-          message: error.message
+          message: error.message,
         });
       }
     });
@@ -612,7 +648,6 @@ async function demarrerServeur() {
     appExpress.listen(port, () => {
       logToFile(`Serveur démarré sur le port ${port}`);
     });
-
   } catch (error) {
     console.error("Erreur lors du démarrage du serveur:", error);
     process.exit(1);
@@ -620,7 +655,7 @@ async function demarrerServeur() {
 }
 
 // Démarrer le serveur
-demarrerServeur().catch(error => {
+demarrerServeur().catch((error) => {
   console.error("Erreur fatale:", error);
   process.exit(1);
 });

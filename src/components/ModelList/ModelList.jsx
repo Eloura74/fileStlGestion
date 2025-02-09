@@ -46,13 +46,16 @@ const ModelList = ({ models = [], onEdit, onDelete }) => {
       return;
     }
     try {
-      const response = await fetch(`http://localhost:3001/api/models/${updatedModel.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedModel),
-      });
+      const response = await fetch(
+        `http://localhost:3001/api/models/${updatedModel.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedModel),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Erreur lors de la modification du modèle");
@@ -65,7 +68,9 @@ const ModelList = ({ models = [], onEdit, onDelete }) => {
           if (!model || (!model.nom && !model.name)) return model;
           const modelId = model.nom || model.name;
           const updatedId = updatedModel.nom || updatedModel.name;
-          return modelId === updatedId ? { ...model, ...updatedModelResponse } : model;
+          return modelId === updatedId
+            ? { ...model, ...updatedModelResponse }
+            : model;
         });
       });
     } catch (error) {
@@ -75,15 +80,20 @@ const ModelList = ({ models = [], onEdit, onDelete }) => {
 
   const handleDelete = async (model) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/models/${model.id}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `http://localhost:3001/api/models/${model.id}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Erreur lors de la suppression du modèle");
       }
 
-      setLocalModels((prevModels) => prevModels.filter((m) => m.id !== model.id));
+      setLocalModels((prevModels) =>
+        prevModels.filter((m) => m.id !== model.id)
+      );
     } catch (error) {
       console.error("Erreur lors de la suppression:", error);
       alert("Erreur lors de la suppression du modèle: " + error.message);
@@ -91,11 +101,13 @@ const ModelList = ({ models = [], onEdit, onDelete }) => {
   };
 
   const filteredModels = localModels.filter((model) => {
-    const matchesSearch = model.nom?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         model.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategorie = !selectedCategorie || model.categorie === selectedCategorie;
+    const matchesSearch =
+      model.nom?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      model.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategorie =
+      !selectedCategorie || model.categorie === selectedCategorie;
     const matchesTheme = !selectedTheme || model.theme === selectedTheme;
-    
+
     return matchesSearch && matchesCategorie && matchesTheme;
   });
 
@@ -176,7 +188,9 @@ const ModelList = ({ models = [], onEdit, onDelete }) => {
         {filteredModels.length === 0 && (
           <div className="text-center text-gray-400 py-12">
             <p className="text-xl">Aucun modèle trouvé</p>
-            <p className="mt-2">Essayez de modifier vos critères de recherche</p>
+            <p className="mt-2">
+              Essayez de modifier vos critères de recherche
+            </p>
           </div>
         )}
       </div>

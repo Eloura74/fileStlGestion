@@ -14,9 +14,9 @@ function Model({ url, modelColor = "#9333ea" }) {
 
     const loader = new STLLoader();
     // Nettoyer l'URL en supprimant les doublons potentiels de "http://localhost:3001/models/"
-    const cleanUrl = url.replace(/^(http:\/\/localhost:3001\/models\/)+/, '');
+    const cleanUrl = url.replace(/^(http:\/\/localhost:3001\/models\/)+/, "");
     const fullUrl = `http://localhost:3001/models/${cleanUrl}`;
-    
+
     console.log("Chargement du modèle STL:", fullUrl);
 
     loader.load(
@@ -25,7 +25,7 @@ function Model({ url, modelColor = "#9333ea" }) {
         try {
           // Calcul des normales pour un meilleur rendu
           geometry.computeVertexNormals();
-          
+
           // Centrer le modèle dans la scène
           geometry.center();
 
@@ -71,11 +71,13 @@ function STLViewer({ url, className = "", modelColor }) {
   if (!url) return null;
 
   return (
-    <div className={`w-full h-64 bg-gray-800 rounded-lg overflow-hidden ${className}`}>
+    <div
+      className={`w-full h-64 bg-gray-800 rounded-lg overflow-hidden ${className}`}
+    >
       <Canvas>
         <Suspense fallback={null}>
-          <Stage 
-            environment="city" 
+          <Stage
+            environment="city"
             intensity={0.6}
             shadows={{ type: "accumulative", color: "black", opacity: 0.3 }}
           >
