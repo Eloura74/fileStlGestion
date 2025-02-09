@@ -4,27 +4,36 @@ import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
 import { OrbitControls, Stage, PerspectiveCamera } from "@react-three/drei";
 import * as THREE from "three";
 
+// Composant pour le rendu du modèle 3D
 function Model({ url, modelColor = "#9333ea" }) {
   const meshRef = useRef();
   const [geometry, setGeometry] = React.useState(null);
 
   React.useEffect(() => {
+    if (!url) return;
+
     const loader = new STLLoader();
+    // Nettoyer l'URL en supprimant les doublons potentiels de "http://localhost:3001/models/"
+    const cleanUrl = url.replace(/^(http:\/\/localhost:3001\/models\/)+/, '');
+    const fullUrl = `http://localhost:3001/models/${cleanUrl}`;
+    
+    console.log("Chargement du modèle STL:", fullUrl);
+
     loader.load(
-      url,
+      fullUrl,
       (geometry) => {
         try {
+          // Calcul des normales pour un meilleur rendu
           geometry.computeVertexNormals();
-          // Centrer le modèle
+          
+          // Centrer le modèle dans la scène
           geometry.center();
 
-          // Calculer la boîte englobante
+          // Ajuster l'échelle du modèle
           const box = new THREE.Box3().setFromObject(new THREE.Mesh(geometry));
           const size = box.getSize(new THREE.Vector3());
           const maxSize = Math.max(size.x, size.y, size.z);
-
-          // Ajuster l'échelle pour que le modèle soit plus petit
-          const scale = 1.3 / maxSize; // Réduire la taille à 30% de l'original
+          const scale = 1.3 / maxSize;
           geometry.scale(scale, scale, scale);
 
           setGeometry(geometry);
@@ -32,7 +41,9 @@ function Model({ url, modelColor = "#9333ea" }) {
           console.error("Erreur lors du traitement du modèle:", err);
         }
       },
+      // Fonction de progression (non utilisée pour l'instant)
       undefined,
+      // Gestionnaire d'erreur
       (error) => {
         console.error("Erreur de chargement STL:", error);
       }
@@ -43,6 +54,7 @@ function Model({ url, modelColor = "#9333ea" }) {
     return null;
   }
 
+  // Rendu du modèle avec les matériaux et la rotation
   return (
     <mesh ref={meshRef} geometry={geometry} rotation={[0, Math.PI / 4, 0]}>
       <meshStandardMaterial
@@ -54,38 +66,35 @@ function Model({ url, modelColor = "#9333ea" }) {
   );
 }
 
-const STLViewer = ({ url, className = "", modelColor }) => {
+// Composant principal du visualiseur STL
+function STLViewer({ url, className = "", modelColor }) {
+  if (!url) return null;
+
   return (
-    <div
-      className={`${className} w-full h-full bg-gray-800 rounded-lg overflow-hidden`}
-    >
+    <div className={`w-full h-64 bg-gray-800 rounded-lg overflow-hidden ${className}`}>
       <Canvas>
         <Suspense fallback={null}>
-          <PerspectiveCamera makeDefault position={[1.5, 1.5, 1.5]} />
-          <Stage
-            environment="sunset"
-            intensity={0.5}
-            adjustCamera={false}
-            shadows={{ type: "accumulative", color: "black", opacity: 0.5 }}
-            contactShadow
+          <Stage 
+            environment="city" 
+            intensity={0.6}
+            shadows={{ type: "accumulative", color: "black", opacity: 0.3 }}
           >
             <Model url={url} modelColor={modelColor} />
           </Stage>
           <OrbitControls
-            enableZoom={true}
             enablePan={true}
+            enableZoom={true}
             enableRotate={true}
-            autoRotate
-            autoRotateSpeed={2}
-            minPolarAngle={Math.PI / 4}
-            maxPolarAngle={Math.PI / 1.5}
+            minDistance={2}
+            maxDistance={10}
           />
+          <PerspectiveCamera makeDefault position={[0, 0, 5]} />
+          <ambientLight intensity={0.5} />
+          <pointLight position={[10, 10, 10]} intensity={1} />
         </Suspense>
-        <ambientLight intensity={1.5} />
-        <pointLight position={[10, 10, 10]} intensity={1.5} />
       </Canvas>
     </div>
   );
-};
+}
 
 export default STLViewer;

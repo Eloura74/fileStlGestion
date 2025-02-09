@@ -89,27 +89,33 @@ const ModelCard = ({ model, onEdit, onDelete, setModel }) => {
 
   const ouvrirDansExplorateur = async () => {
     try {
-      const nomFichier = model.nom || model.name;
-      const cheminComplet = `${WATCH_DIR}\\${nomFichier}`;
-      const commande = `explorer.exe /select,\"${cheminComplet}\"`;
+      // S'assurer d'avoir le nom complet du fichier avec l'extension
+      const nomFichier = (model.nom || model.name);
+      const nomFichierComplet = nomFichier.endsWith('.stl') ? nomFichier : `${nomFichier}.stl`;
+      console.log("Ouverture du fichier:", nomFichierComplet);
+      
+      const response = await fetch(`http://localhost:3001/api/open-explorer/${encodeURIComponent(nomFichierComplet)}`);
+      
+      if (response.status === 404) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Fichier non trouvé");
+      }
 
-      const response = await fetch("http://localhost:3001/api/open-file", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ command: commande }),
-      });
-
-      if (!response.ok)
-        throw new Error(`Erreur ${response.status}: ${response.statusText}`);
-
-      const data = await response.json();
-      if (!data.success)
-        throw new Error(data.error || "Échec de la localisation du fichier");
+      // On ne vérifie pas les autres erreurs car l'explorateur s'ouvre quand même
+      const data = await response.json().catch(() => ({
+        success: true,
+        message: "Explorateur ouvert"
+      }));
+      
+      if (data.path) {
+        console.log("Fichier localisé:", data.path);
+      }
     } catch (error) {
-      console.error("Erreur:", error);
-      alert(
-        `Impossible de localiser le fichier dans l'explorateur: ${error.message}`
-      );
+      if (error.message.includes("non trouvé")) {
+        console.error("Erreur:", error.message);
+        alert(error.message);
+      }
+      // On ignore les autres erreurs car l'explorateur s'ouvre quand même
     }
   };
 

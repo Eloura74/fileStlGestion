@@ -37,39 +37,50 @@ function App() {
   const handleEdit = async (modelId, editData) => {
     try {
       console.log("Modification du modèle:", modelId, editData);
-      const encodedId = encodeURIComponent(modelId);
-      const response = await fetch(
-        `http://localhost:3001/api/models/${encodedId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(editData),
-        }
-      );
+
+      // S'assurer que le nom a l'extension .stl
+      if (editData.nom && !editData.nom.toLowerCase().endsWith('.stl')) {
+        editData.nom = `${editData.nom}.stl`;
+      }
+
+      // Appel à l'API pour mettre à jour le modèle
+      const response = await fetch(`http://localhost:3001/api/models/${modelId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editData)
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(
-          errorData.error || "Erreur lors de la modification du modèle"
-        );
+        throw new Error(errorData.message || 'Erreur lors de la mise à jour du modèle');
       }
 
-      const updatedModel = await response.json();
+      const updatedData = await response.json();
+      console.log("Réponse du serveur:", updatedData);
 
-      // Mettre à jour la liste des modèles en utilisant le nom comme identifiant
-      setModels(
-        models.map((model) => {
-          const modelName = model.nom || model.name;
-          return modelName === modelId ? { ...model, ...updatedModel } : model;
-        })
-      );
+      // Mettre à jour la liste des modèles
+      setModels(prevModels => {
+        return prevModels.map(model => {
+          if (model.nom === modelId) {
+            // Si le nom a été modifié, mettre à jour l'URL du modèle
+            const newModelData = {
+              ...model,
+              ...editData,
+              url: editData.nom // Le nom contient maintenant l'extension .stl
+            };
+            return newModelData;
+          }
+          return model;
+        });
+      });
 
-      return updatedModel;
+      // Recharger la liste des modèles pour s'assurer d'avoir les données à jour
+      fetchModels();
     } catch (error) {
-      console.error("Erreur lors de l'édition:", error);
-      throw error;
+      console.error("Erreur lors de la modification:", error);
+      // Vous pouvez ajouter ici une notification d'erreur pour l'utilisateur
     }
   };
 

@@ -1,0 +1,17 @@
+{
+    "nom": "test6.stl",
+    "taille_bytes": 446984,
+    "date_modification": "2023-09-01T07:27:16.641Z",
+    "description": "",
+    "categorie": "",
+    "theme": "autre",
+    "tags": [],
+    "auteur": "",
+    "date_creation": "2025-02-09T14:44:52.255Z",
+    "parametres_impression": {
+        "materiau": "",
+        "epaisseur_couche": "",
+        "remplissage": "",
+        "support": false
+    }
+}
