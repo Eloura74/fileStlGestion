@@ -1,109 +1,48 @@
 import React from "react";
+import { FunnelIcon } from "@heroicons/react/24/outline";
 
-const FilterPanel = ({ filters, onFilterChange }) => {
-  const handleChange = (name, value) => {
-    onFilterChange({ ...filters, [name]: value });
-  };
+const FilterPanel = ({
+  selectedCategorie,
+  selectedTheme,
+  onCategorieChange,
+  onThemeChange,
+}) => {
+  const categories = ["resine", "filament", "autre"];
+  const themes = ["figurine", "jeux", "decoration", "fonctionnel", "autre"];
 
   return (
-    <div className="bg-white rounded-lg shadow p-4">
-      <h2 className="text-lg font-semibold mb-4">Filtres</h2>
-
-      {/* Format */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Format
-        </label>
+    <div className="flex flex-col sm:flex-row gap-4">
+      <div className="relative">
         <select
-          value={filters.format}
-          onChange={(e) => handleChange("format", e.target.value)}
-          className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          value={selectedCategorie}
+          onChange={(e) => onCategorieChange(e.target.value)}
+          className="w-full pl-10 pr-4 py-2 bg-gray-800 text-white border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
         >
-          <option value="">Tous</option>
-          <option value="STL">STL</option>
-          <option value="OBJ">OBJ</option>
-          <option value="FBX">FBX</option>
-          <option value="3DS">3DS</option>
+          <option value="">Toutes les catégories</option>
+          {categories.map((categorie) => (
+            <option key={categorie} value={categorie}>
+              {categorie.charAt(0).toUpperCase() + categorie.slice(1)}
+            </option>
+          ))}
         </select>
+        <FunnelIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
       </div>
 
-      {/* Catégorie */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Catégorie
-        </label>
+      <div className="relative">
         <select
-          value={filters.categorie}
-          onChange={(e) => handleChange("categorie", e.target.value)}
-          className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          value={selectedTheme}
+          onChange={(e) => onThemeChange(e.target.value)}
+          className="w-full pl-10 pr-4 py-2 bg-gray-800 text-white border border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
         >
-          <option value="">Toutes</option>
-          <option value="Architecture">Architecture</option>
-          <option value="Personnages">Personnages</option>
-          <option value="Véhicules">Véhicules</option>
-          <option value="Mobilier">Mobilier</option>
-          <option value="Autres">Autres</option>
+          <option value="">Tous les thèmes</option>
+          {themes.map((theme) => (
+            <option key={theme} value={theme}>
+              {theme.charAt(0).toUpperCase() + theme.slice(1)}
+            </option>
+          ))}
         </select>
+        <FunnelIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
       </div>
-
-      {/* Taille */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Taille
-        </label>
-        <select
-          value={filters.taille}
-          onChange={(e) => handleChange("taille", e.target.value)}
-          className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-        >
-          <option value="">Toutes</option>
-          <option value="petit">Petit (&lt; 10 Mo)</option>
-          <option value="moyen">Moyen (10-50 Mo)</option>
-          <option value="grand">Grand (&gt; 50 Mo)</option>
-        </select>
-      </div>
-
-      {/* Date de création */}
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Date minimum
-          </label>
-          <input
-            type="date"
-            value={filters.dateMin}
-            onChange={(e) => handleChange("dateMin", e.target.value)}
-            className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Date maximum
-          </label>
-          <input
-            type="date"
-            value={filters.dateMax}
-            onChange={(e) => handleChange("dateMax", e.target.value)}
-            className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-        </div>
-      </div>
-
-      {/* Bouton de réinitialisation */}
-      <button
-        onClick={() =>
-          onFilterChange({
-            format: "",
-            categorie: "",
-            taille: "",
-            dateMin: "",
-            dateMax: "",
-          })
-        }
-        className="w-full mt-6 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
-      >
-        Réinitialiser les filtres
-      </button>
     </div>
   );
 };

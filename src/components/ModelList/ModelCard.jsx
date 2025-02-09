@@ -15,9 +15,74 @@ import "../../styles/card-flip.css";
 
 const ModelCard = ({ model, onEdit, onDelete }) => {
   const [isFlipped, setIsFlipped] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    nom: model.nom || "",
+    description: model.description || "",
+    categorie: model.categorie || "",
+    theme: model.theme || "",
+    tags: model.tags || [],
+    auteur: model.auteur || "",
+  });
+
+  const categories = ["resine", "filament", "autre"];
+  const themes = ["figurine", "jeux", "decoration", "fonctionnel", "autre"];
 
   const handleFlip = () => {
     setIsFlipped(!isFlipped);
+  };
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleDelete = () => {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer ce modèle ?")) {
+      onDelete(model);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === "tags") {
+      setEditForm(prev => ({
+        ...prev,
+        tags: value.split(",").map(tag => tag.trim())
+      }));
+    } else {
+      setEditForm(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await onEdit(model.id, editForm);
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Erreur lors de la modification:", error);
+      alert("Erreur lors de la modification du modèle: " + error.message);
+    }
+  };
+
+  const ouvrirDansExplorateur = async () => {
+    try {
+      const nomFichier = model.nom;
+      const nomFichierComplet = nomFichier.endsWith('.stl') ? nomFichier : `${nomFichier}.stl`;
+      
+      const response = await fetch(`http://localhost:3001/api/open-explorer/${encodeURIComponent(nomFichierComplet)}`);
+      
+      if (response.status === 404) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Fichier non trouvé");
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'ouverture du fichier:", error);
+      alert("Erreur lors de l'ouverture du fichier: " + error.message);
+    }
   };
 
   const formatDate = (date) => {
@@ -33,6 +98,122 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
     if (!bytes) return "0 Ko";
     return (bytes / 1024).toFixed(2) + " Ko";
   };
+
+  if (isEditing) {
+    return (
+      <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl p-6 border border-purple-500/20">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-white mb-1">
+              Nom
+            </label>
+            <input
+              type="text"
+              name="nom"
+              value={editForm.nom}
+              onChange={handleChange}
+              className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-white mb-1">
+              Description
+            </label>
+            <textarea
+              name="description"
+              value={editForm.description}
+              onChange={handleChange}
+              rows="3"
+              className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-white mb-1">
+                Catégorie
+              </label>
+              <select
+                name="categorie"
+                value={editForm.categorie}
+                onChange={handleChange}
+                className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+              >
+                <option value="">Sélectionner une catégorie</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-white mb-1">
+                Thème
+              </label>
+              <select
+                name="theme"
+                value={editForm.theme}
+                onChange={handleChange}
+                className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+              >
+                <option value="">Sélectionner un thème</option>
+                {themes.map((theme) => (
+                  <option key={theme} value={theme}>
+                    {theme}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-white mb-1">
+              Tags (séparés par des virgules)
+            </label>
+            <input
+              type="text"
+              name="tags"
+              value={editForm.tags.join(", ")}
+              onChange={handleChange}
+              className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-white mb-1">
+              Auteur
+            </label>
+            <input
+              type="text"
+              name="auteur"
+              value={editForm.auteur}
+              onChange={handleChange}
+              className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-700">
+            <button
+              type="button"
+              onClick={() => setIsEditing(false)}
+              className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors"
+            >
+              Enregistrer
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -126,7 +307,7 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
             <div className="bg-gray-900/50 p-4 border-t border-gray-700">
               <div className="grid grid-cols-4 gap-2">
                 <button
-                  onClick={() => onEdit(model)}
+                  onClick={handleEdit}
                   className="flex flex-col items-center p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-colors"
                   title="Modifier"
                 >
@@ -144,7 +325,7 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
                 </button>
 
                 <button
-                  onClick={() => onDelete(model)}
+                  onClick={handleDelete}
                   className="flex flex-col items-center p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
                   title="Supprimer"
                 >
@@ -153,9 +334,9 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
                 </button>
 
                 <button
-                  onClick={() => window.open(`file://${model.path}`, '_blank')}
+                  onClick={ouvrirDansExplorateur}
                   className="flex flex-col items-center p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-colors"
-                  title="Ouvrir"
+                  title="Ouvrir dans l'explorateur"
                 >
                   <FolderOpenIcon className="h-5 w-5 mb-1" />
                   <span className="text-xs">Ouvrir</span>

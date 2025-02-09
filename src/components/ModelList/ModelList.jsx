@@ -1,20 +1,43 @@
 import React, { useState, useEffect } from "react";
 import ModelCard from "./ModelCard";
 import SearchBar from "../SearchBar/SearchBar";
+import FilterPanel from "../Filters/FilterPanel";
 
-// declaration des types de données
 const ModelList = ({ models = [], onEdit, onDelete }) => {
   const [localModels, setLocalModels] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategorie, setSelectedCategorie] = useState("");
+  const [selectedTheme, setSelectedTheme] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // mise à jour des models locaux
   useEffect(() => {
     const validModels = Array.isArray(models) ? models : [];
     setLocalModels(validModels);
   }, [models]);
 
-  // gestion des modifications
-  const handleModelUpdate = (updatedModel) => {
+  useEffect(() => {
+    fetchModels();
+  }, []);
+
+  const fetchModels = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("http://localhost:3001/api/models");
+      if (!response.ok) {
+        throw new Error("Erreur lors du chargement des modèles");
+      }
+      const data = await response.json();
+      setLocalModels(data);
+    } catch (error) {
+      console.error("Erreur:", error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleModelUpdate = async (updatedModel) => {
     if (!updatedModel || (!updatedModel.nom && !updatedModel.name)) {
       console.warn(
         "Tentative de mise à jour avec un modèle invalide:",
@@ -22,25 +45,82 @@ const ModelList = ({ models = [], onEdit, onDelete }) => {
       );
       return;
     }
-    // mise à jour des models locaux
-    setLocalModels((prevModels) => {
-      const currentModels = Array.isArray(prevModels) ? prevModels : [];
-      return currentModels.map((model) => {
-        if (!model || (!model.nom && !model.name)) return model;
-        const modelId = model.nom || model.name;
-        const updatedId = updatedModel.nom || updatedModel.name;
-        return modelId === updatedId ? updatedModel : model;
+    try {
+      const response = await fetch(`http://localhost:3001/api/models/${updatedModel.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedModel),
       });
-    });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la modification du modèle");
+      }
+
+      const updatedModelResponse = await response.json();
+      setLocalModels((prevModels) => {
+        const currentModels = Array.isArray(prevModels) ? prevModels : [];
+        return currentModels.map((model) => {
+          if (!model || (!model.nom && !model.name)) return model;
+          const modelId = model.nom || model.name;
+          const updatedId = updatedModel.nom || updatedModel.name;
+          return modelId === updatedId ? { ...model, ...updatedModelResponse } : model;
+        });
+      });
+    } catch (error) {
+      console.error("Erreur lors de la modification:", error);
+    }
   };
 
-  // gestion des filtres
+  const handleDelete = async (model) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/models/${model.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la suppression du modèle");
+      }
+
+      setLocalModels((prevModels) => prevModels.filter((m) => m.id !== model.id));
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error);
+      alert("Erreur lors de la suppression du modèle: " + error.message);
+    }
+  };
+
   const filteredModels = localModels.filter((model) => {
-    if (!searchQuery) return true;
-    return model.nom.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = model.nom?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         model.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategorie = !selectedCategorie || model.categorie === selectedCategorie;
+    const matchesTheme = !selectedTheme || model.theme === selectedTheme;
+    
+    return matchesSearch && matchesCategorie && matchesTheme;
   });
 
-  // affichage
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center text-red-500 p-4">
+        <p>Erreur: {error}</p>
+        <button
+          onClick={fetchModels}
+          className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+        >
+          Réessayer
+        </button>
+      </div>
+    );
+  }
+
   if (!Array.isArray(localModels) || localModels.length === 0) {
     return (
       <div className="bg-gray-900 min-h-[calc(100vh-4rem)] p-6">
@@ -58,13 +138,24 @@ const ModelList = ({ models = [], onEdit, onDelete }) => {
   }
 
   return (
-    <div className="bg-gray-900 min-h-[calc(100vh-4rem)] p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-white">Mes Modèles 3D</h1>
+    <div className="min-h-screen bg-gray-900 p-6">
+      <div className="container mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-white mb-6">Mes Modèles 3D</h1>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-grow">
+              <SearchBar value={searchQuery} onChange={setSearchQuery} />
+            </div>
+            <FilterPanel
+              selectedCategorie={selectedCategorie}
+              selectedTheme={selectedTheme}
+              onCategorieChange={setSelectedCategorie}
+              onThemeChange={setSelectedTheme}
+            />
+          </div>
         </div>
-        <SearchBar value={searchQuery} onChange={setSearchQuery} />
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredModels.map((model) => {
             if (!model || (!model.nom && !model.name)) {
               console.warn("Modèle invalide détecté:", model);
@@ -75,13 +166,19 @@ const ModelList = ({ models = [], onEdit, onDelete }) => {
               <ModelCard
                 key={model.id || model.nom || model.name}
                 model={model}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                setModel={handleModelUpdate}
+                onEdit={handleModelUpdate}
+                onDelete={handleDelete}
               />
             );
           })}
         </div>
+
+        {filteredModels.length === 0 && (
+          <div className="text-center text-gray-400 py-12">
+            <p className="text-xl">Aucun modèle trouvé</p>
+            <p className="mt-2">Essayez de modifier vos critères de recherche</p>
+          </div>
+        )}
       </div>
     </div>
   );
