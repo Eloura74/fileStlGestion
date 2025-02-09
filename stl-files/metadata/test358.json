@@ -1,15 +1,9 @@
 {
   "nom": "test358.stl",
-  "dateModification": "2025-02-09T14:55:28.487Z",
+  "dateModification": "2025-02-09T19:14:08.781Z",
   "description": "",
-  "categorie": "",
-  "theme": "",
+  "categorie": "resine",
+  "theme": "decoration",
   "tags": [],
-  "auteur": "",
-  "parametres_impression": {
-    "materiau": "",
-    "epaisseur_couche": "",
-    "remplissage": "",
-    "support": false
-  }
+  "auteur": ""
 }

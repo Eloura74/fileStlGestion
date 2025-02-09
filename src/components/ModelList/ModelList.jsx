@@ -37,23 +37,18 @@ const ModelList = ({ models = [], onEdit, onDelete }) => {
     }
   };
 
-  const handleModelUpdate = async (updatedModel) => {
-    if (!updatedModel || (!updatedModel.nom && !updatedModel.name)) {
-      console.warn(
-        "Tentative de mise à jour avec un modèle invalide:",
-        updatedModel
-      );
-      return;
-    }
+  const handleModelUpdate = async (modelId, updatedData) => {
     try {
+      console.log("Mise à jour du modèle:", { modelId, updatedData });
+
       const response = await fetch(
-        `http://localhost:3001/api/models/${updatedModel.id}`,
+        `http://localhost:3001/api/models/${modelId}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(updatedModel),
+          body: JSON.stringify(updatedData),
         }
       );
 
@@ -61,20 +56,19 @@ const ModelList = ({ models = [], onEdit, onDelete }) => {
         throw new Error("Erreur lors de la modification du modèle");
       }
 
-      const updatedModelResponse = await response.json();
-      setLocalModels((prevModels) => {
-        const currentModels = Array.isArray(prevModels) ? prevModels : [];
-        return currentModels.map((model) => {
-          if (!model || (!model.nom && !model.name)) return model;
-          const modelId = model.nom || model.name;
-          const updatedId = updatedModel.nom || updatedModel.name;
-          return modelId === updatedId
-            ? { ...model, ...updatedModelResponse }
-            : model;
-        });
-      });
+      const updatedModel = await response.json();
+      console.log("Modèle mis à jour:", updatedModel);
+
+      setLocalModels((prevModels) =>
+        prevModels.map((model) =>
+          model.id === modelId ? { ...model, ...updatedModel } : model
+        )
+      );
+
+      return updatedModel;
     } catch (error) {
       console.error("Erreur lors de la modification:", error);
+      throw error;
     }
   };
 
@@ -178,7 +172,9 @@ const ModelList = ({ models = [], onEdit, onDelete }) => {
               <ModelCard
                 key={model.id || model.nom || model.name}
                 model={model}
-                onEdit={handleModelUpdate}
+                onEdit={(updatedData) =>
+                  handleModelUpdate(model.id, updatedData)
+                }
                 onDelete={handleDelete}
               />
             );

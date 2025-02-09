@@ -10,6 +10,11 @@ import {
   TagIcon,
   DocumentTextIcon,
   ArrowsRightLeftIcon,
+  ChatBubbleBottomCenterTextIcon,
+  RectangleStackIcon,
+  BookmarkIcon,
+  UserIcon,
+  ClockIcon,
 } from "@heroicons/react/24/outline";
 import "../../styles/card-flip.css";
 
@@ -44,23 +49,24 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
   // fonction pour modifier les données
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === "tags") {
-      setEditForm((prev) => ({
-        ...prev,
-        tags: value.split(",").map((tag) => tag.trim()),
-      }));
-    } else {
-      setEditForm((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
+    setEditForm((prev) => {
+      if (name === "tags") {
+        // Convertir la chaîne de tags en tableau
+        const tagsArray = value
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean);
+        return { ...prev, [name]: tagsArray };
+      }
+      return { ...prev, [name]: value };
+    });
   };
   // fonction pour soumettre la modification
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await onEdit(model.id, editForm);
+      console.log("Soumission du formulaire:", editForm);
+      await onEdit(editForm);
       setIsEditing(false);
     } catch (error) {
       console.error("Erreur lors de la modification:", error);
@@ -134,6 +140,13 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
                 </h3>
                 <div className="flex space-x-2 ml-2">
                   <button
+                    onClick={ouvrirDansExplorateur}
+                    className="p-1.5 text-gray-400 hover:text-blue-400 transition-colors"
+                    title="Ouvrir dans l'explorateur"
+                  >
+                    <FolderOpenIcon className="h-5 w-5" />
+                  </button>
+                  <button
                     onClick={() => setIsFlipped(true)}
                     className="p-1.5 text-gray-400 hover:text-purple-400 transition-colors"
                     title="Plus d'informations"
@@ -179,9 +192,14 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
 
         {/* Face arrière */}
         <div className="absolute w-full h-full backface-hidden rotate-y-180">
-          <div className="h-full bg-gray-800 rounded-xl p-6 border border-gray-700">
+          <div className="h-full bg-gray-800 rounded-xl p-6 border border-gray-700 overflow-y-auto">
             <div className="flex justify-between items-start mb-6">
-              <h3 className="text-lg font-semibold text-white">{model.nom}</h3>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-white">
+                  {model.nom}
+                </h3>
+                <p className="text-sm text-gray-400">Informations du fichier</p>
+              </div>
               <button
                 onClick={() => setIsFlipped(false)}
                 className="p-1.5 text-gray-400 hover:text-purple-400 transition-colors"
@@ -194,110 +212,156 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
             {isEditing ? (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300">
+                  <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center">
+                    <ChatBubbleBottomCenterTextIcon className="h-4 w-4 mr-2" />
                     Description
                   </label>
                   <textarea
                     name="description"
                     value={editForm.description}
                     onChange={handleChange}
-                    className="mt-1 w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+                    className="mt-1 w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     rows="3"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300">
-                    Catégorie
-                  </label>
-                  <select
-                    name="categorie"
-                    value={editForm.categorie}
-                    onChange={handleChange}
-                    className="mt-1 w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
-                  >
-                    <option value="">Sélectionner une catégorie</option>
-                    {categories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center">
+                      <RectangleStackIcon className="h-4 w-4 mr-2" />
+                      Catégorie
+                    </label>
+                    <select
+                      name="categorie"
+                      value={editForm.categorie}
+                      onChange={handleChange}
+                      className="mt-1 w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    >
+                      <option value="">Sélectionner</option>
+                      {categories.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center">
+                      <BookmarkIcon className="h-4 w-4 mr-2" />
+                      Thème
+                    </label>
+                    <select
+                      name="theme"
+                      value={editForm.theme}
+                      onChange={handleChange}
+                      className="mt-1 w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    >
+                      <option value="">Sélectionner</option>
+                      {themes.map((theme) => (
+                        <option key={theme} value={theme}>
+                          {theme}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-300">
-                    Thème
-                  </label>
-                  <select
-                    name="theme"
-                    value={editForm.theme}
-                    onChange={handleChange}
-                    className="mt-1 w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
-                  >
-                    <option value="">Sélectionner un thème</option>
-                    {themes.map((theme) => (
-                      <option key={theme} value={theme}>
-                        {theme}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300">
-                    Tags
+                  <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center">
+                    <TagIcon className="h-4 w-4 mr-2" />
+                    Tags (séparés par des virgules)
                   </label>
                   <input
                     type="text"
                     name="tags"
                     value={editForm.tags.join(", ")}
                     onChange={handleChange}
-                    placeholder="tag1, tag2, tag3"
-                    className="mt-1 w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+                    className="mt-1 w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
                 </div>
-                <div className="flex justify-end space-x-2 pt-4">
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center">
+                    <UserIcon className="h-4 w-4 mr-2" />
+                    Auteur
+                  </label>
+                  <input
+                    type="text"
+                    name="auteur"
+                    value={editForm.auteur}
+                    onChange={handleChange}
+                    className="mt-1 w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-3 mt-6">
                   <button
                     type="button"
                     onClick={() => setIsEditing(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white"
+                    className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
                   >
                     Annuler
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-sm font-medium bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                    className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
                   >
                     Enregistrer
                   </button>
                 </div>
               </form>
             ) : (
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-300">Description</h4>
-                  <p className="mt-1 text-sm text-gray-400">
+              <div className="space-y-6">
+                <div className="bg-gray-700/30 p-4 rounded-lg">
+                  <div className="flex items-center mb-2">
+                    <ChatBubbleBottomCenterTextIcon className="h-5 w-5 text-purple-400 mr-2" />
+                    <h4 className="text-sm font-medium text-gray-300">
+                      Description
+                    </h4>
+                  </div>
+                  <p className="text-sm text-gray-400 ml-7">
                     {model.description || "Aucune description"}
                   </p>
                 </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-300">Catégorie</h4>
-                  <p className="mt-1 text-sm text-gray-400">
-                    {model.categorie || "Non catégorisé"}
-                  </p>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-700/30 p-4 rounded-lg">
+                    <div className="flex items-center mb-2">
+                      <RectangleStackIcon className="h-5 w-5 text-purple-400 mr-2" />
+                      <h4 className="text-sm font-medium text-gray-300">
+                        Catégorie
+                      </h4>
+                    </div>
+                    <p className="text-sm text-gray-400 ml-7">
+                      {model.categorie || "Non catégorisé"}
+                    </p>
+                  </div>
+
+                  <div className="bg-gray-700/30 p-4 rounded-lg">
+                    <div className="flex items-center mb-2">
+                      <BookmarkIcon className="h-5 w-5 text-purple-400 mr-2" />
+                      <h4 className="text-sm font-medium text-gray-300">
+                        Thème
+                      </h4>
+                    </div>
+                    <p className="text-sm text-gray-400 ml-7">
+                      {model.theme || "Non défini"}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-300">Thème</h4>
-                  <p className="mt-1 text-sm text-gray-400">
-                    {model.theme || "Non défini"}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-300">Tags</h4>
-                  <div className="mt-1 flex flex-wrap gap-2">
+
+                <div className="bg-gray-700/30 p-4 rounded-lg">
+                  <div className="flex items-center mb-2">
+                    <TagIcon className="h-5 w-5 text-purple-400 mr-2" />
+                    <h4 className="text-sm font-medium text-gray-300">Tags</h4>
+                  </div>
+                  <div className="ml-7 flex flex-wrap gap-2">
                     {model.tags && model.tags.length > 0 ? (
                       model.tags.map((tag, index) => (
                         <span
                           key={index}
-                          className="px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded-full"
+                          className="px-2 py-1 text-xs bg-purple-500/20 text-purple-300 rounded-full"
                         >
                           {tag}
                         </span>
@@ -307,13 +371,44 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
                     )}
                   </div>
                 </div>
-                <button
-                  onClick={ouvrirDansExplorateur}
-                  className="mt-4 w-full flex items-center justify-center px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600"
-                >
-                  <FolderOpenIcon className="h-5 w-5 mr-2" />
-                  Ouvrir dans l'explorateur
-                </button>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-700/30 p-4 rounded-lg">
+                    <div className="flex items-center mb-2">
+                      <UserIcon className="h-5 w-5 text-purple-400 mr-2" />
+                      <h4 className="text-sm font-medium text-gray-300">
+                        Auteur
+                      </h4>
+                    </div>
+                    <p className="text-sm text-gray-400 ml-7">
+                      {model.auteur || "Non spécifié"}
+                    </p>
+                  </div>
+
+                  <div className="bg-gray-700/30 p-4 rounded-lg">
+                    <div className="flex items-center mb-2">
+                      <CalendarIcon className="h-5 w-5 text-purple-400 mr-2" />
+                      <h4 className="text-sm font-medium text-gray-300">
+                        Création
+                      </h4>
+                    </div>
+                    <p className="text-sm text-gray-400 ml-7">
+                      {formatDate(model.dateCreation)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-gray-700/30 p-4 rounded-lg">
+                  <div className="flex items-center mb-2">
+                    <ClockIcon className="h-5 w-5 text-purple-400 mr-2" />
+                    <h4 className="text-sm font-medium text-gray-300">
+                      Dernière modification
+                    </h4>
+                  </div>
+                  <p className="text-sm text-gray-400 ml-7">
+                    {formatDate(model.dateModification)}
+                  </p>
+                </div>
               </div>
             )}
           </div>
