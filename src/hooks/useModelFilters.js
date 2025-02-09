@@ -1,25 +1,31 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback } from "react";
 
 const useModelFilters = (initialModels = []) => {
   const [filters, setFilters] = useState({
-    theme: 'tous',
-    categorie: 'tous',
+    theme: "tous",
+    categorie: "tous",
   });
 
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   const filteredModels = useCallback(() => {
-    return initialModels.filter(model => {
+    return initialModels.filter((model) => {
       // Recherche textuelle
-      if (searchQuery && !model.nom.toLowerCase().includes(searchQuery.toLowerCase())) {
+      if (
+        searchQuery &&
+        !model.nom.toLowerCase().includes(searchQuery.toLowerCase())
+      ) {
         return false;
       }
 
       // Filtres
-      if (filters.theme !== 'tous' && model.theme !== filters.theme) {
+      if (filters.theme !== "tous" && model.theme !== filters.theme) {
         return false;
       }
-      if (filters.categorie !== 'tous' && model.categorie !== filters.categorie) {
+      if (
+        filters.categorie !== "tous" &&
+        model.categorie !== filters.categorie
+      ) {
         return false;
       }
 
@@ -32,7 +38,7 @@ const useModelFilters = (initialModels = []) => {
     setFilters,
     searchQuery,
     setSearchQuery,
-    filteredModels
+    filteredModels,
   };
 };
 

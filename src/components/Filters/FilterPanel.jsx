@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 const FilterPanel = ({ filters, onFilterChange }) => {
   const handleChange = (name, value) => {
@@ -16,7 +16,7 @@ const FilterPanel = ({ filters, onFilterChange }) => {
         </label>
         <select
           value={filters.format}
-          onChange={(e) => handleChange('format', e.target.value)}
+          onChange={(e) => handleChange("format", e.target.value)}
           className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
         >
           <option value="">Tous</option>
@@ -34,7 +34,7 @@ const FilterPanel = ({ filters, onFilterChange }) => {
         </label>
         <select
           value={filters.categorie}
-          onChange={(e) => handleChange('categorie', e.target.value)}
+          onChange={(e) => handleChange("categorie", e.target.value)}
           className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
         >
           <option value="">Toutes</option>
@@ -53,7 +53,7 @@ const FilterPanel = ({ filters, onFilterChange }) => {
         </label>
         <select
           value={filters.taille}
-          onChange={(e) => handleChange('taille', e.target.value)}
+          onChange={(e) => handleChange("taille", e.target.value)}
           className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
         >
           <option value="">Toutes</option>
@@ -72,7 +72,7 @@ const FilterPanel = ({ filters, onFilterChange }) => {
           <input
             type="date"
             value={filters.dateMin}
-            onChange={(e) => handleChange('dateMin', e.target.value)}
+            onChange={(e) => handleChange("dateMin", e.target.value)}
             className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
         </div>
@@ -83,7 +83,7 @@ const FilterPanel = ({ filters, onFilterChange }) => {
           <input
             type="date"
             value={filters.dateMax}
-            onChange={(e) => handleChange('dateMax', e.target.value)}
+            onChange={(e) => handleChange("dateMax", e.target.value)}
             className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
         </div>
@@ -91,13 +91,15 @@ const FilterPanel = ({ filters, onFilterChange }) => {
 
       {/* Bouton de réinitialisation */}
       <button
-        onClick={() => onFilterChange({
-          format: '',
-          categorie: '',
-          taille: '',
-          dateMin: '',
-          dateMax: ''
-        })}
+        onClick={() =>
+          onFilterChange({
+            format: "",
+            categorie: "",
+            taille: "",
+            dateMin: "",
+            dateMax: "",
+          })
+        }
         className="w-full mt-6 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
       >
         Réinitialiser les filtres
