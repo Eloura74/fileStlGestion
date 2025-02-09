@@ -15,6 +15,8 @@ import {
   BookmarkIcon,
   UserIcon,
   ClockIcon,
+  ArrowUturnLeftIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import "../../styles/card-flip.css";
 
@@ -39,6 +41,7 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
 
   const handleEdit = () => {
     setIsEditing(true);
+    setIsFlipped(true);
   };
 
   const handleDelete = () => {
@@ -80,7 +83,9 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
         });
       }
       
+      // Retourner à la vue recto
       setIsEditing(false);
+      setIsFlipped(false);
     } catch (error) {
       console.error("Erreur lors de la modification:", error);
       alert("Erreur lors de la modification du modèle: " + error.message);
@@ -213,13 +218,48 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
                 </h3>
                 <p className="text-sm text-gray-400">Informations du fichier</p>
               </div>
-              <button
-                onClick={() => setIsFlipped(false)}
-                className="p-1.5 text-gray-400 hover:text-purple-400 transition-colors"
-                title="Retourner"
-              >
-                <ArrowsRightLeftIcon className="h-5 w-5" />
-              </button>
+              {!isEditing ? (
+                <div className="flex space-x-2">
+                  <button
+                    onClick={handleEdit}
+                    className="p-2 text-gray-400 hover:text-purple-400 transition-colors"
+                    title="Modifier"
+                  >
+                    <PencilIcon className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="p-2 text-gray-400 hover:text-red-400 transition-colors"
+                    title="Supprimer"
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => setIsFlipped(!isFlipped)}
+                    className="p-2 text-gray-400 hover:text-blue-400 transition-colors"
+                    title={isFlipped ? "Voir le modèle" : "Plus d'informations"}
+                  >
+                    {isFlipped ? (
+                      <ArrowUturnLeftIcon className="h-5 w-5" />
+                    ) : (
+                      <InformationCircleIcon className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => {
+                      setIsEditing(false);
+                      setIsFlipped(false);
+                    }}
+                    className="p-2 text-gray-400 hover:text-red-400 transition-colors"
+                    title="Annuler"
+                  >
+                    <XMarkIcon className="h-5 w-5" />
+                  </button>
+                </div>
+              )}
             </div>
 
             {isEditing ? (
