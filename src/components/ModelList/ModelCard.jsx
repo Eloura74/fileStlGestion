@@ -66,7 +66,20 @@ const ModelCard = ({ model, onEdit, onDelete }) => {
     e.preventDefault();
     try {
       console.log("Soumission du formulaire:", editForm);
-      await onEdit(editForm);
+      const updatedModel = await onEdit(editForm);
+      
+      // Mettre à jour le formulaire avec les nouvelles données
+      if (updatedModel) {
+        setEditForm({
+          nom: updatedModel.nom || "",
+          description: updatedModel.description || "",
+          categorie: updatedModel.categorie || "",
+          theme: updatedModel.theme || "",
+          tags: updatedModel.tags || [],
+          auteur: updatedModel.auteur || "",
+        });
+      }
+      
       setIsEditing(false);
     } catch (error) {
       console.error("Erreur lors de la modification:", error);

@@ -56,16 +56,19 @@ const ModelList = ({ models = [], onEdit, onDelete }) => {
         throw new Error("Erreur lors de la modification du modèle");
       }
 
-      const updatedModel = await response.json();
-      console.log("Modèle mis à jour:", updatedModel);
+      const result = await response.json();
+      console.log("Modèle mis à jour:", result);
 
-      setLocalModels((prevModels) =>
-        prevModels.map((model) =>
-          model.id === modelId ? { ...model, ...updatedModel } : model
-        )
-      );
+      if (result.success && result.data) {
+        // Mise à jour de l'état local avec les nouvelles données
+        setLocalModels((prevModels) =>
+          prevModels.map((model) =>
+            model.nom === updatedData.nom ? { ...model, ...result.data } : model
+          )
+        );
+      }
 
-      return updatedModel;
+      return result.data;
     } catch (error) {
       console.error("Erreur lors de la modification:", error);
       throw error;
