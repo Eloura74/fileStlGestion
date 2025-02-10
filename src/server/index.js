@@ -29,15 +29,32 @@ function logToFile(message) {
 const appExpress = express();
 const port = 3001;
 
+// Configuration CORS détaillée
+const corsOptions = {
+  origin: "http://localhost:5173",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
 // Middleware
-appExpress.use(
-  cors({
-    origin: "http://localhost:5173", // URL de votre application Vite
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type"],
-  })
-);
+appExpress.use(cors(corsOptions));
 appExpress.use(express.json());
+
+// Middleware pour les en-têtes CORS personnalisés
+appExpress.use((req, res, next) => {
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Origin', 'http://localhost:5173');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  // Gérer les requêtes OPTIONS (preflight)
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 // Servir les fichiers statiques
 const modelsPath = path.join(__dirname, "..", "..", "stl-files");
@@ -62,7 +79,8 @@ appExpress.use(
 ); // Pour la rétrocompatibilité
 
 // Configuration initiale
-const cheminBase = process.env.VITE_BASE_WATCH_DIRS || "C:/Users/faber/Documents/fichier3d"; // Chemin fixe vers fichier3d
+const cheminBase =
+  process.env.VITE_BASE_WATCH_DIRS || "C:/Users/Quentin/Documents/fichier3d"; // Chemin fixe vers fichier3d
 console.log("=== Configuration des chemins ===");
 console.log("cheminBase:", cheminBase);
 console.log("modelsPath:", modelsPath);
@@ -70,7 +88,7 @@ console.log("modelsPath:", modelsPath);
 // Configuration de la surveillance des dossiers
 const watchConfig = {
   watchDirectories: [],
-  initialized: false
+  initialized: false,
 };
 
 // Fonction pour charger la configuration
@@ -644,6 +662,56 @@ async function demarrerServeur() {
       }
     });
 
+    // API pour l'inscription
+    appExpress.post("/api/auth/register", async (req, res) => {
+      const { email, motDePasse } = req.body;
+
+      // Simulation d'un utilisateur enregistré (normalement, on stocke en base de données)
+      const user = {
+        email: "faber.quentin@gmail.com",
+        motDePasse: "000000",
+      };
+
+      // Vérification si l'email existe déjà (normalement, on vérifie en base)
+      if (email === user.email) {
+        return res.status(400).json({
+          success: false,
+          message: "Cet email est déjà utilisé",
+        });
+      }
+
+      // Simuler l'enregistrement d'un utilisateur (normalement, on l'ajoute en base)
+      res.json({
+        success: true,
+        message: "Utilisateur enregistré avec succès",
+        user: { email },
+      });
+    });
+
+    // API pour la connexion
+    appExpress.post("/api/auth/login", async (req, res) => {
+      const { email, motDePasse } = req.body;
+
+      // Simulation d'un utilisateur en base de données
+      const user = {
+        email: "faber.quentin@gmail.com",
+        motDePasse: "000000",
+      };
+
+      // Vérification des identifiants
+      if (email !== user.email || motDePasse !== user.motDePasse) {
+        return res.status(401).json({
+          success: false,
+          message: "Identifiants invalides",
+        });
+      }
+
+      // Simuler un token (dans un vrai cas, utilise JWT)
+      const token = "fake-jwt-token";
+
+      res.json({ token });
+    });
+
     // Démarrer le serveur
     appExpress.listen(port, () => {
       logToFile(`Serveur démarré sur le port ${port}`);
@@ -653,7 +721,8 @@ async function demarrerServeur() {
     process.exit(1);
   }
 }
-
+// _________________________________
+// _________________________________
 // Démarrer le serveur
 demarrerServeur().catch((error) => {
   console.error("Erreur fatale:", error);

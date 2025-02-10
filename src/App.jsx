@@ -8,6 +8,8 @@ import Models from "./pages/Models";
 import Navigation from "./components/Layout/Navigation";
 import Parametres from "./pages/Parametres";
 import { BasePathProvider } from "./contexts/BasePathContext";
+import Connection from "./components/Connection/Connection";
+import Inscription from "./components/Connection/Inscription";
 
 function App() {
   const [models, setModels] = useState([]);
@@ -15,6 +17,7 @@ function App() {
   const [error, setError] = useState(null);
   const { filteredModels, ...filterProps } = useModelFilters(models);
 
+  // Fonction pour charger la liste des modèles
   const fetchModels = async () => {
     try {
       const response = await fetch("http://localhost:3001/api/models");
@@ -30,6 +33,7 @@ function App() {
     }
   };
 
+  // Fonction pour mettre à jour un modèle
   useEffect(() => {
     fetchModels();
   }, []);
@@ -39,36 +43,41 @@ function App() {
       console.log("Modification du modèle:", modelId, editData);
 
       // S'assurer que le nom a l'extension .stl
-      if (editData.nom && !editData.nom.toLowerCase().endsWith('.stl')) {
+      if (editData.nom && !editData.nom.toLowerCase().endsWith(".stl")) {
         editData.nom = `${editData.nom}.stl`;
       }
 
       // Appel à l'API pour mettre à jour le modèle
-      const response = await fetch(`http://localhost:3001/api/models/${modelId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(editData)
-      });
+      const response = await fetch(
+        `http://localhost:3001/api/models/${modelId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(editData),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de la mise à jour du modèle');
+        throw new Error(
+          errorData.message || "Erreur lors de la mise à jour du modèle"
+        );
       }
 
       const updatedData = await response.json();
       console.log("Réponse du serveur:", updatedData);
 
       // Mettre à jour la liste des modèles
-      setModels(prevModels => {
-        return prevModels.map(model => {
+      setModels((prevModels) => {
+        return prevModels.map((model) => {
           if (model.nom === modelId) {
             // Si le nom a été modifié, mettre à jour l'URL du modèle
             const newModelData = {
               ...model,
               ...editData,
-              url: editData.nom // Le nom contient maintenant l'extension .stl
+              url: editData.nom, // Le nom contient maintenant l'extension .stl
             };
             return newModelData;
           }
@@ -132,6 +141,8 @@ function App() {
                   />
                 }
               />
+              <Route path="/connection" element={<Connection />} />
+              <Route path="/inscription" element={<Inscription />} />
               <Route path="/parametres" element={<Parametres />} />
             </Routes>
           </div>
