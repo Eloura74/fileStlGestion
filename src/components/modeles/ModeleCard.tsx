@@ -111,8 +111,13 @@ const ModeleCard: React.FC<ModeleCardProps> = ({ modele, onEdit }) => {
         <div className="mt-4">
           <button
             onClick={onEdit}
-            className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 
-            hover:bg-blue-700 rounded-lg transition-colors duration-200 
+            className="w-full px-4 py-2 text-sm font-medium text-gray-200 
+            bg-gradient-to-r from-slate-800 to-slate-700
+            hover:from-slate-700 hover:to-slate-600
+            border border-slate-600
+            shadow-lg shadow-black/20
+            rounded-lg transition-all duration-300 
+            hover:shadow-[0px_0px_15px_2px_rgba(0,0,0,0.3)]
             flex items-center justify-center gap-2"
           >
             <svg
