@@ -75,14 +75,23 @@ export class StlController {
       const files = await fs.readdir(STL_DIRECTORY);
       const stlFiles = files.filter((file) => file.endsWith(".stl"));
       const metadata = await this.loadMetadata();
-
-      return stlFiles.map((fileName) => {
-        if (!metadata[fileName]) {
-          metadata[fileName] = new StlMetadata(fileName);
-          this.saveMetadata(metadata).catch(console.error);
+      
+      console.log("Métadonnées chargées:", metadata);
+      
+      const result = stlFiles.map((fileName) => {
+        if (metadata[fileName]) {
+          console.log(`Métadonnées pour ${fileName}:`, metadata[fileName]);
+          return metadata[fileName];
         }
-        return metadata[fileName];
+        
+        const newMetadata = new StlMetadata(fileName);
+        metadata[fileName] = newMetadata;
+        this.saveMetadata(metadata).catch(console.error);
+        return newMetadata;
       });
+
+      console.log("Données envoyées au client:", result);
+      return result;
     } catch (error) {
       console.error("Erreur lors de la récupération des fichiers:", error);
       throw error;

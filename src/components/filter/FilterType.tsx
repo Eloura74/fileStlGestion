@@ -4,11 +4,24 @@ interface FilterTypeProps {
   onFilterChange: (type: string) => void;
 }
 
+// Liste des types d'impression disponibles avec les valeurs exactes du JSON
+const TYPES = [
+  { value: "", label: "Type d'impression" },
+  { value: "filament", label: "Filament" },
+  { value: "resine", label: "Résine" },
+  { value: "technique", label: "Technique" },
+];
+
 const FilterType: React.FC<FilterTypeProps> = ({ onFilterChange }) => {
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    console.log("Type sélectionné:", e.target.value);
+    onFilterChange(e.target.value);
+  };
+
   return (
     <div className="filter-select-container">
       <select
-        onChange={(e) => onFilterChange(e.target.value)}
+        onChange={handleChange}
         className="text-center appearance-none px-4 py-2 pr-8 bg-gray-800/40 text-gray-200 
                    border border-gray-700 rounded-lg cursor-pointer w-50
                    transition-all duration-300 ease-in-out
@@ -17,15 +30,11 @@ const FilterType: React.FC<FilterTypeProps> = ({ onFilterChange }) => {
                    font-medium"
         defaultValue=""
       >
-        <option value="" className="text-center bg-gray-800">
-          Type d'impression
-        </option>
-        <option value="filament" className="text-center bg-gray-800">
-          Filament
-        </option>
-        <option value="resine" className="text-center bg-gray-800">
-          Résine
-        </option>
+        {TYPES.map(({ value, label }) => (
+          <option key={value} value={value} className="text-center bg-gray-800">
+            {label}
+          </option>
+        ))}
       </select>
     </div>
   );

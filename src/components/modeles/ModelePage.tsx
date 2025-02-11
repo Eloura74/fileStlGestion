@@ -46,6 +46,7 @@ const ModelePage: React.FC = () => {
       }
 
       const data = await response.json();
+      console.log("Données brutes reçues de l'API:", data);
 
       if (!Array.isArray(data)) {
         throw new Error("Format de données invalide");
@@ -54,10 +55,8 @@ const ModelePage: React.FC = () => {
       setModeles(data);
     } catch (error) {
       console.error("Erreur lors du chargement des modèles:", error);
-      setError(
-        "Impossible de charger les modèles. Veuillez réessayer plus tard."
-      );
-      setModeles([]); // Réinitialiser les modèles en cas d'erreur
+      setError("Impossible de charger les modèles. Veuillez réessayer plus tard.");
+      setModeles([]);
     } finally {
       setIsLoading(false);
     }
@@ -99,13 +98,20 @@ const ModelePage: React.FC = () => {
     }
   };
 
-  // Gestion des filtres
-  const handleFilterType = (selectedType: string) =>
+  // Gestion des filtres avec logs
+  const handleFilterType = (selectedType: string) => {
+    console.log("Filtre type sélectionné:", selectedType);
     setTypeFiltre(selectedType);
-  const handleFilterCategorie = (selectedCategorie: string) =>
+  };
+
+  const handleFilterCategorie = (selectedCategorie: string) => {
+    console.log("Filtre catégorie sélectionné:", selectedCategorie);
     setCategorieFiltre(selectedCategorie);
+  };
+
   const handleFilterDate = (selectedDate: string) =>
     setDateFiltre(selectedDate);
+
   const handleSearch = (searchTerm: string) => setRecherche(searchTerm);
 
   // Fonction pour annuler la modification
@@ -116,16 +122,63 @@ const ModelePage: React.FC = () => {
 
   // Filtrage des modèles
   const modelesFiltres = modeles.filter((modele) => {
-    const matchType = !typeFiltre || modele.type === typeFiltre;
-    const matchCategorie =
-      !categorieFiltre || modele.categorie === categorieFiltre;
-    const matchDate = !dateFiltre || modele.dateAjout.includes(dateFiltre);
-    const matchRecherche =
-      !recherche ||
-      modele.fileName.toLowerCase().includes(recherche.toLowerCase()) ||
-      modele.description.toLowerCase().includes(recherche.toLowerCase());
+    console.log("Filtrage du modèle:", {
+      fileName: modele.fileName,
+      type: modele.type,
+      categorie: modele.categorie,
+      typeFiltre: typeFiltre,
+      categorieFiltre: categorieFiltre,
+      typeMatch: !typeFiltre || (modele.type && modele.type.toLowerCase() === typeFiltre.toLowerCase()),
+      categorieMatch: !categorieFiltre || (modele.categorie && modele.categorie.toLowerCase() === categorieFiltre.toLowerCase())
+    });
 
-    return matchType && matchCategorie && matchDate && matchRecherche;
+    // Filtre par type
+    if (typeFiltre) {
+      if (!modele.type || modele.type.toLowerCase() !== typeFiltre.toLowerCase()) {
+        console.log(`Rejeté par filtre type: attendu="${typeFiltre}", reçu="${modele.type}"`);
+        return false;
+      }
+    }
+
+    // Filtre par catégorie
+    if (categorieFiltre) {
+      if (!modele.categorie || modele.categorie.toLowerCase() !== categorieFiltre.toLowerCase()) {
+        console.log(`Rejeté par filtre catégorie: attendu="${categorieFiltre}", reçu="${modele.categorie}"`);
+        return false;
+      }
+    }
+
+    // Filtre par date
+    if (dateFiltre) {
+      const dateModele = new Date(modele.dateAjout).toLocaleDateString();
+      const dateFiltrage = new Date(dateFiltre).toLocaleDateString();
+      if (dateModele !== dateFiltrage) {
+        console.log("Rejeté par filtre date");
+        return false;
+      }
+    }
+
+    // Filtre par recherche
+    if (recherche) {
+      const searchTerm = recherche.toLowerCase();
+      const matches =
+        modele.fileName.toLowerCase().includes(searchTerm) ||
+        (modele.description &&
+          modele.description.toLowerCase().includes(searchTerm)) ||
+        (modele.type && modele.type.toLowerCase().includes(searchTerm)) ||
+        (modele.categorie &&
+          modele.categorie.toLowerCase().includes(searchTerm)) ||
+        (modele.tags &&
+          modele.tags.some((tag) => tag.toLowerCase().includes(searchTerm)));
+
+      if (!matches) {
+        console.log("Rejeté par filtre recherche");
+        return false;
+      }
+    }
+
+    console.log("Modèle accepté");
+    return true;
   });
 
   return (
