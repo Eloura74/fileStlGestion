@@ -1,47 +1,40 @@
 import express from "express";
 import cors from "cors";
-import fs from "fs";
+import stlRoutes from "./src/server/routes/stlRoutes.js";
 import path from "path";
 
 const app = express();
 const PORT = 5000;
 
-const STL_DIRECTORY = "C:/Users/Quentin/Documents/fichier3d"; // 📌 Dossier cible
+// Middleware pour les erreurs CORS
+app.use(
+  cors({
+    origin: "http://localhost:5173", // URL de votre frontend Vite
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type"],
+  })
+);
 
-// 🔹 Middleware CORS
-app.use(cors());
+// Middleware pour parser le JSON
+app.use(express.json());
 
-// 🔹 Endpoint pour récupérer la liste des fichiers
-app.get("/stl-files", (req, res) => {
-  fs.readdir(STL_DIRECTORY, (err, files) => {
-    if (err) {
-      return res
-        .status(500)
-        .json({ message: "Erreur de lecture du dossier", error: err });
-    }
-    console.log("fichier trouver dans le dossier", files);
-    const stlFiles = files.filter((file) => file.endsWith(".stl"));
-    res.json(stlFiles);
-  });
-});
-// 🔹 Route pour récupérer la liste des fichiers STL
-app.get("/stl-files/:filename", (req, res) => {
-  const fileName = decodeURIComponent(req.params.filename);
-  const filePath = path.join(STL_DIRECTORY, fileName);
-
-  console.log(`🔍 Fichier demandé : ${fileName}`);
-  console.log(`📂 Chemin complet : ${filePath}`);
-
-  if (fs.existsSync(filePath)) {
-    console.log("✅ Fichier trouvé, envoi en cours...");
-    res.sendFile(filePath);
-  } else {
-    console.error("❌ Fichier introuvable :", filePath);
-    res.status(404).json({ message: "Fichier non trouvé", path: filePath });
+// Gestion des erreurs JSON
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+    return res.status(400).json({ message: "Format JSON invalide" });
   }
+  next();
 });
 
-// 🔹 Lancement du serveur
+// Routes API
+app.use("/api", stlRoutes);
+
+// Gestion des erreurs 404
+app.use((req, res) => {
+  res.status(404).json({ message: "Route non trouvée" });
+});
+
+// Démarrage du serveur
 app.listen(PORT, () => {
   console.log(`🚀 Serveur backend démarré sur http://localhost:${PORT}`);
 });
