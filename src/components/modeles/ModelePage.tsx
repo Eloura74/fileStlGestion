@@ -3,6 +3,7 @@ import SearchBar from "../filter/SearchBar";
 import FilterType from "../filter/FilterType";
 import FilterCategorie from "../filter/FilterCategorie";
 import FilterDate from "../filter/FilterDate";
+import FilterReset from "../filter/FilterReset";
 import ModeleCard from "./ModeleCard";
 import ModifyFiles from "./ModifyFiles";
 import "./ModelePage.css";
@@ -22,10 +23,10 @@ const ModelePage: React.FC = () => {
   const [typeFiltre, setTypeFiltre] = useState<string>("");
   const [categorieFiltre, setCategorieFiltre] = useState<string>("");
   const [dateFiltre, setDateFiltre] = useState<string>("");
+  const [recherche, setRecherche] = useState<string>("");
   const [modeles, setModeles] = useState<Modele[]>([]);
   const [modeleEnModification, setModeleEnModification] =
     useState<Modele | null>(null);
-  const [recherche, setRecherche] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -98,21 +99,39 @@ const ModelePage: React.FC = () => {
     }
   };
 
-  // Gestion des filtres avec logs
-  const handleFilterType = (selectedType: string) => {
-    console.log("Filtre type sélectionné:", selectedType);
-    setTypeFiltre(selectedType);
+  // Gestionnaires d'événements pour les filtres
+  const handleFilterType = (type: string) => {
+    setTypeFiltre(type);
   };
 
-  const handleFilterCategorie = (selectedCategorie: string) => {
-    console.log("Filtre catégorie sélectionné:", selectedCategorie);
-    setCategorieFiltre(selectedCategorie);
+  const handleFilterCategorie = (categorie: string) => {
+    setCategorieFiltre(categorie);
   };
 
-  const handleFilterDate = (selectedDate: string) =>
-    setDateFiltre(selectedDate);
+  const handleFilterDate = (date: string) => {
+    setDateFiltre(date);
+  };
 
-  const handleSearch = (searchTerm: string) => setRecherche(searchTerm);
+  const handleSearch = (searchTerm: string) => {
+    setRecherche(searchTerm);
+  };
+
+  // Réinitialisation des filtres avec retour aux valeurs par défaut
+  const handleResetFilters = () => {
+    setTypeFiltre("");
+    setCategorieFiltre("");
+    setDateFiltre("");
+    setRecherche("");
+    
+    // Réinitialiser les sélecteurs à leur valeur par défaut
+    const typeSelect = document.querySelector('select[data-filter="type"]') as HTMLSelectElement;
+    const categorieSelect = document.querySelector('select[data-filter="categorie"]') as HTMLSelectElement;
+    const dateSelect = document.querySelector('select[data-filter="date"]') as HTMLSelectElement;
+    
+    if (typeSelect) typeSelect.value = "";
+    if (categorieSelect) categorieSelect.value = "";
+    if (dateSelect) dateSelect.value = "";
+  };
 
   // Fonction pour annuler la modification
   const handleCancelEdit = () => setModeleEnModification(null);
@@ -120,112 +139,116 @@ const ModelePage: React.FC = () => {
   // Fonction pour commencer la modification
   const handleEdit = (modele: Modele) => setModeleEnModification(modele);
 
-  // Filtrage des modèles
-  const modelesFiltres = modeles.filter((modele) => {
-    console.log("Filtrage du modèle:", {
-      fileName: modele.fileName,
-      type: modele.type,
-      categorie: modele.categorie,
-      typeFiltre: typeFiltre,
-      categorieFiltre: categorieFiltre,
-      typeMatch: !typeFiltre || (modele.type && modele.type.toLowerCase() === typeFiltre.toLowerCase()),
-      categorieMatch: !categorieFiltre || (modele.categorie && modele.categorie.toLowerCase() === categorieFiltre.toLowerCase())
-    });
-
-    // Filtre par type
-    if (typeFiltre) {
-      if (!modele.type || modele.type.toLowerCase() !== typeFiltre.toLowerCase()) {
-        console.log(`Rejeté par filtre type: attendu="${typeFiltre}", reçu="${modele.type}"`);
-        return false;
-      }
-    }
-
-    // Filtre par catégorie
-    if (categorieFiltre) {
-      if (!modele.categorie || modele.categorie.toLowerCase() !== categorieFiltre.toLowerCase()) {
-        console.log(`Rejeté par filtre catégorie: attendu="${categorieFiltre}", reçu="${modele.categorie}"`);
-        return false;
-      }
-    }
-
-    // Filtre par date
-    if (dateFiltre) {
-      const dateModele = new Date(modele.dateAjout).toLocaleDateString();
-      const dateFiltrage = new Date(dateFiltre).toLocaleDateString();
-      if (dateModele !== dateFiltrage) {
-        console.log("Rejeté par filtre date");
-        return false;
-      }
-    }
-
-    // Filtre par recherche
-    if (recherche) {
-      const searchTerm = recherche.toLowerCase();
-      const matches =
-        modele.fileName.toLowerCase().includes(searchTerm) ||
-        (modele.description &&
-          modele.description.toLowerCase().includes(searchTerm)) ||
-        (modele.type && modele.type.toLowerCase().includes(searchTerm)) ||
-        (modele.categorie &&
-          modele.categorie.toLowerCase().includes(searchTerm)) ||
-        (modele.tags &&
-          modele.tags.some((tag) => tag.toLowerCase().includes(searchTerm)));
-
-      if (!matches) {
-        console.log("Rejeté par filtre recherche");
-        return false;
-      }
-    }
-
-    console.log("Modèle accepté");
-    return true;
-  });
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Barre de filtres */}
-      <div className="flex flex-wrap gap-4 mb-8">
-        <SearchBar onSearch={handleSearch} />
-        <FilterType onFilterChange={handleFilterType} />
-        <FilterCategorie onFilterChange={handleFilterCategorie} />
-        <FilterDate onFilterChange={handleFilterDate} />
+    <div className="page-container">
+      <div className="header-section">
+        <h1 className="page-title">Modèles STL</h1>
+        
+        {/* Section des filtres */}
+        <div className="filters-container">
+          {/* Barre de recherche */}
+          <div className="search-bar-container">
+            <SearchBar onSearch={handleSearch} />
+          </div>
+          
+          {/* Zone des filtres */}
+          <div className="filters-controls">
+            <div className="filters-group">
+              <FilterType 
+                onFilterChange={handleFilterType} 
+                selectedValue={typeFiltre}
+                data-filter="type"
+              />
+              <FilterCategorie
+                onFilterChange={handleFilterCategorie}
+                selectedValue={categorieFiltre}
+                data-filter="categorie"
+              />
+              <FilterDate 
+                onFilterChange={handleFilterDate}
+                selectedValue={dateFiltre}
+                data-filter="date"
+              />
+            </div>
+            <div className="reset-button">
+              <FilterReset onReset={handleResetFilters} />
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Message d'erreur */}
+      {/* Messages d'erreur */}
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="error-message">
           {error}
         </div>
       )}
 
-      {/* Contenu principal */}
+      {/* État de chargement */}
       {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="text-slate-500">Chargement des modèles...</div>
-        </div>
-      ) : modeleEnModification ? (
-        <div className="max-w-2xl mx-auto">
-          <ModifyFiles
-            modele={modeleEnModification}
-            onSave={handleSaveModele}
-            onCancel={handleCancelEdit}
-          />
+        <div className="loading-state">
+          <div className="loading-spinner"></div>
+          <span>Chargement des modèles...</span>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {modelesFiltres.length === 0 ? (
-            <div className="col-span-full text-center text-slate-500 py-12">
-              {error ? "Une erreur est survenue" : "Aucun modèle trouvé"}
-            </div>
-          ) : (
-            modelesFiltres.map((modele) => (
+        <div className="models-grid">
+          {modeles
+            .filter((modele) => {
+              // Filtre par type
+              if (typeFiltre && typeFiltre !== "") {
+                if (!modele.type || modele.type.toLowerCase() !== typeFiltre.toLowerCase()) {
+                  return false;
+                }
+              }
+
+              // Filtre par catégorie
+              if (categorieFiltre && categorieFiltre !== "") {
+                if (!modele.categorie || modele.categorie.toLowerCase() !== categorieFiltre.toLowerCase()) {
+                  return false;
+                }
+              }
+
+              // Filtre par date
+              if (dateFiltre && dateFiltre !== "") {
+                const dateModele = new Date(modele.dateAjout).toLocaleDateString();
+                const dateFiltrage = new Date(dateFiltre).toLocaleDateString();
+                if (dateModele !== dateFiltrage) {
+                  return false;
+                }
+              }
+
+              // Filtre par recherche
+              if (recherche && recherche !== "") {
+                const searchTerm = recherche.toLowerCase();
+                const matches =
+                  modele.fileName.toLowerCase().includes(searchTerm) ||
+                  (modele.description &&
+                    modele.description.toLowerCase().includes(searchTerm)) ||
+                  (modele.type && modele.type.toLowerCase().includes(searchTerm)) ||
+                  (modele.categorie &&
+                    modele.categorie.toLowerCase().includes(searchTerm)) ||
+                  (modele.tags &&
+                    modele.tags.some((tag) => tag.toLowerCase().includes(searchTerm)));
+
+                if (!matches) {
+                  return false;
+                }
+              }
+
+              return true;
+            })
+            .map((modele) => (
               <ModeleCard
                 key={modele.id}
                 modele={modele}
                 onEdit={() => handleEdit(modele)}
               />
-            ))
-          )}
+            ))}
+            {modeles.length === 0 && (
+              <div className="no-results">
+                Aucun modèle trouvé
+              </div>
+            )}
         </div>
       )}
     </div>

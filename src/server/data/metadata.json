@@ -2,7 +2,7 @@
   "Cercle.stl": {
     "fileName": "Cercle.stl",
     "id": "5lphu637c",
-    "type": "technique",
+    "type": "filament",
     "categorie": "technique",
     "dateAjout": "2025-02-11T14:54:45.885Z",
     "lastModified": "2025-02-11T14:55:40.913Z",
@@ -12,7 +12,7 @@
   "Crane.stl": {
     "fileName": "Crane.stl",
     "id": "renbgpwfz",
-    "type": "jeux",
+    "type": "resine",
     "categorie": "jeux",
     "dateAjout": "2025-02-11T14:54:45.887Z",
     "lastModified": "2025-02-11T14:55:46.325Z",
@@ -22,8 +22,8 @@
   "Signe.stl": {
     "fileName": "Signe.stl",
     "id": "ydfjehocl",
-    "type": "",
-    "categorie": "",
+    "type": "resine",
+    "categorie": "deco",
     "dateAjout": "2025-02-11T14:54:45.887Z",
     "lastModified": "2025-02-11T14:54:45.887Z",
     "description": "",
@@ -32,10 +32,10 @@
   "Smartphone.stl": {
     "fileName": "Smartphone.stl",
     "id": "36j8ud8e1",
-    "type": "",
+    "type": "technique",
     "categorie": "",
     "dateAjout": "2025-02-11T14:54:45.887Z",
-    "lastModified": "2025-02-11T14:54:45.887Z",
+    "lastModified": "2025-02-11T15:28:44.980Z",
     "description": "",
     "tags": []
   },
