@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import SearchBar from "../filter/SearchBar";
 import FilterType from "../filter/FilterType";
 import FilterCategorie from "../filter/FilterCategorie";
+import FilterDate from "../filter/FilterDate";
 import ModeleCard from "./ModeleCard";
 import ModifyFiles from "./ModifyFiles";
 import { listFiles } from "../../api/apiStl";
@@ -11,12 +12,15 @@ interface Modele {
   id: string;
   type: string;
   categorie: string;
+  date: string;
 }
 
 const ModelePage: React.FC = () => {
   const [typeFiltre, setTypeFiltre] = useState<string>("");
   const [categorieFiltre, setCategorieFiltre] = useState<string>("");
-  const [modeleEnModification, setModeleEnModification] = useState<Modele | null>(null);
+  const [modeleEnModification, setModeleEnModification] =
+    useState<Modele | null>(null);
+  const [dateFiltre, setDateFiltre] = useState<string>("");
   const [modeles, setModeles] = useState<Modele[]>([]);
   const [recherche, setRecherche] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
@@ -30,6 +34,7 @@ const ModelePage: React.FC = () => {
             id: file,
             type: "", // Type d'impression (filament/résine)
             categorie: "", // Catégorie (jeux, déco, etc.)
+            date: "", // Date d'impression
           }))
         );
       } catch (error) {
@@ -48,6 +53,10 @@ const ModelePage: React.FC = () => {
 
   const handleFilterCategorie = (selectedCategorie: string) => {
     setCategorieFiltre(selectedCategorie);
+  };
+
+  const handleFilterDate = (selectedDate: string) => {
+    setDateFiltre(selectedDate);
   };
 
   const handleSearchChange = (value: string) => {
@@ -73,6 +82,7 @@ const ModelePage: React.FC = () => {
     (modele) =>
       (typeFiltre === "" || modele.type === typeFiltre) &&
       (categorieFiltre === "" || modele.categorie === categorieFiltre) &&
+      (dateFiltre === "" || modele.date === dateFiltre) &&
       modele.id.toLowerCase().includes(recherche.toLowerCase())
   );
 
@@ -85,9 +95,10 @@ const ModelePage: React.FC = () => {
         </div>
 
         {/* Filtres */}
-        <div className="flex justify-center gap-4">
+        <div className="flex justify-start gap-4 pl-4">
           <FilterCategorie onFilterChange={handleFilterCategorie} />
           <FilterType onFilterChange={handleFilterType} />
+          <FilterDate onFilterChange={handleFilterDate} />
         </div>
       </div>
 

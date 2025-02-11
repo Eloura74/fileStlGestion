@@ -1,8 +1,9 @@
 import React, { useState } from "react";
+import { Modele } from '../../types/Modele'; // Assuming the Modele type is defined in this file
 
 interface ModifyFilesProps {
-  modele: { id: string; type: string };
-  onSave: (updatedModele: { id: string; type: string }) => void;
+  modele: Modele;
+  onSave: (updatedModele: Modele) => void;
   onCancel: () => void;
 }
 
