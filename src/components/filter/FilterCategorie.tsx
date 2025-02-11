@@ -9,8 +9,8 @@ interface FilterCategorieProps {
 const CATEGORIES = [
   { value: "", label: "Catégorie" },
   { value: "jeux", label: "Jeux" },
-  { value: "deco", label: "Déco" },
-  { value: "pieces", label: "Pièces" },
+  { value: "decoration", label: "Décoration" },
+  { value: "technique", label: "Technique" },
   { value: "autre", label: "Autre" },
 ];
 

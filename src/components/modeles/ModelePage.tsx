@@ -191,65 +191,83 @@ const ModelePage: React.FC = () => {
           <span>Chargement des modèles...</span>
         </div>
       ) : (
-        <div className="models-grid">
-          {modeles
-            .filter((modele) => {
-              // Filtre par type
-              if (typeFiltre && typeFiltre !== "") {
-                if (!modele.type || modele.type.toLowerCase() !== typeFiltre.toLowerCase()) {
-                  return false;
+        <>
+          <div className="models-grid">
+            {modeles
+              .filter((modele) => {
+                // Filtre par type
+                if (typeFiltre && typeFiltre !== "") {
+                  if (!modele.type || modele.type.toLowerCase() !== typeFiltre.toLowerCase()) {
+                    return false;
+                  }
                 }
-              }
 
-              // Filtre par catégorie
-              if (categorieFiltre && categorieFiltre !== "") {
-                if (!modele.categorie || modele.categorie.toLowerCase() !== categorieFiltre.toLowerCase()) {
-                  return false;
+                // Filtre par catégorie
+                if (categorieFiltre && categorieFiltre !== "") {
+                  if (!modele.categorie || modele.categorie.toLowerCase() !== categorieFiltre.toLowerCase()) {
+                    return false;
+                  }
                 }
-              }
 
-              // Filtre par date
-              if (dateFiltre && dateFiltre !== "") {
-                const dateModele = new Date(modele.dateAjout).toLocaleDateString();
-                const dateFiltrage = new Date(dateFiltre).toLocaleDateString();
-                if (dateModele !== dateFiltrage) {
-                  return false;
+                // Filtre par date
+                if (dateFiltre && dateFiltre !== "") {
+                  const dateModele = new Date(modele.dateAjout).toLocaleDateString();
+                  const dateFiltrage = new Date(dateFiltre).toLocaleDateString();
+                  if (dateModele !== dateFiltrage) {
+                    return false;
+                  }
                 }
-              }
 
-              // Filtre par recherche
-              if (recherche && recherche !== "") {
-                const searchTerm = recherche.toLowerCase();
-                const matches =
-                  modele.fileName.toLowerCase().includes(searchTerm) ||
-                  (modele.description &&
-                    modele.description.toLowerCase().includes(searchTerm)) ||
-                  (modele.type && modele.type.toLowerCase().includes(searchTerm)) ||
-                  (modele.categorie &&
-                    modele.categorie.toLowerCase().includes(searchTerm)) ||
-                  (modele.tags &&
-                    modele.tags.some((tag) => tag.toLowerCase().includes(searchTerm)));
+                // Filtre par recherche
+                if (recherche && recherche !== "") {
+                  const searchTerm = recherche.toLowerCase();
+                  const matches =
+                    modele.fileName.toLowerCase().includes(searchTerm) ||
+                    (modele.description &&
+                      modele.description.toLowerCase().includes(searchTerm)) ||
+                    (modele.type && modele.type.toLowerCase().includes(searchTerm)) ||
+                    (modele.categorie &&
+                      modele.categorie.toLowerCase().includes(searchTerm)) ||
+                    (modele.tags &&
+                      modele.tags.some((tag) => tag.toLowerCase().includes(searchTerm)));
 
-                if (!matches) {
-                  return false;
+                  if (!matches) {
+                    return false;
+                  }
                 }
-              }
 
-              return true;
-            })
-            .map((modele) => (
-              <ModeleCard
-                key={modele.id}
-                modele={modele}
-                onEdit={() => handleEdit(modele)}
-              />
-            ))}
-            {modeles.length === 0 && (
-              <div className="no-results">
-                Aucun modèle trouvé
+                return true;
+              })
+              .map((modele) => (
+                <ModeleCard
+                  key={modele.id}
+                  modele={modele}
+                  onEdit={() => handleEdit(modele)}
+                />
+              ))}
+              {modeles.length === 0 && (
+                <div className="no-results">
+                  Aucun modèle trouvé
+                </div>
+              )}
+          </div>
+
+          {/* Modal de modification */}
+          {modeleEnModification && (
+            <div className="fixed inset-0 z-50 overflow-y-auto">
+              <div className="flex items-center justify-center min-h-screen px-4">
+                <div className="fixed inset-0 bg-black/50 transition-opacity"></div>
+                <div className="relative bg-slate-800 rounded-xl shadow-xl max-w-lg w-full p-6">
+                  <ModifyFiles
+                    modele={modeleEnModification}
+                    onSave={handleSaveModele}
+                    onCancel={handleCancelEdit}
+                  />
+                </div>
               </div>
-            )}
-        </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
