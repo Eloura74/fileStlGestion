@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+/* Style du Navbar */
+.navbar {
+  @apply bg-gradient-to-r from-indigo-500 to-purple-600 p-4 sticky top-0 z-50 rounded-b-lg shadow-md;
+}
+
+/* Style des liens de navigation */
+.nav-links {
+  @apply flex justify-end items-center gap-6;
+}
+
+/* Style du lien de navigation */
+.nav-link {
+  @apply text-white text-lg px-6 py-3 rounded-lg transition-all duration-300 border-none cursor-pointer font-semibold bg-gradient-to-r from-indigo-500 to-purple-600/50 shadow-md;
+}
+
+/* Effet au survol */
+.nav-link:hover {
+  @apply bg-white text-gray-500 shadow-md transform scale-105;
+}
+
+/* Effet pour le lien actif */
+.nav-link.active {
+  @apply bg-gray-200 text-gray-900 font-bold shadow-lg scale-105;
+}

@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+.filter-select-container {
+  @apply mb-4 flex justify-center gap-6;
+}

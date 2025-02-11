@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+.header-section {
+  @apply py-16 px-8 bg-gradient-to-br from-purple-700 to-gray-800 text-white text-center relative;
+}
+
+.header-section::before {
+  @apply absolute top-0 left-0 w-full h-8 bg-black opacity-20 blur-lg content-[''];
+}
+
+.titleH1 {
+  @apply text-6xl font-bold m-0 drop-shadow-lg;
+}
+
+.content-section {
+  @apply py-16 px-8 min-h-screen flex flex-col items-center;
+}
+
+/* Alternance des sections */
+.content-section:nth-child(odd) {
+  @apply bg-gray-100;
+}
+
+/* Style des titres */
+.content-section h2 {
+  @apply text-3xl text-gray-800 mb-8 text-center;
+}
