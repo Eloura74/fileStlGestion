@@ -8,7 +8,7 @@ const METADATA_FILE = path.join(
   "data",
   "metadata.json"
 );
-const STL_DIRECTORY = "C:/Users/Quentin/Documents/fichier3d";
+const STL_DIRECTORY = "C:/Users/faber/Documents/fichier3d";
 
 // Classe pour gérer les métadonnées d'un fichier STL
 class StlMetadata {
@@ -75,15 +75,15 @@ export class StlController {
       const files = await fs.readdir(STL_DIRECTORY);
       const stlFiles = files.filter((file) => file.endsWith(".stl"));
       const metadata = await this.loadMetadata();
-      
+
       console.log("Métadonnées chargées:", metadata);
-      
+
       const result = stlFiles.map((fileName) => {
         if (metadata[fileName]) {
           console.log(`Métadonnées pour ${fileName}:`, metadata[fileName]);
           return metadata[fileName];
         }
-        
+
         const newMetadata = new StlMetadata(fileName);
         metadata[fileName] = newMetadata;
         this.saveMetadata(metadata).catch(console.error);

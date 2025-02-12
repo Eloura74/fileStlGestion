@@ -18,7 +18,7 @@ body {
 
 /* Layout principal */
 .page-container {
-  @apply min-h-screen bg-gray-900 text-white p-6;
+  @apply min-h-screen bg-gray-900/30 rounded-xl text-white p-6;
 }
 
 .header-section {

@@ -24,7 +24,7 @@ router.get("/stl-files/:filename", async (req, res) => {
   try {
     const fileName = decodeURIComponent(req.params.filename);
     const filePath = path.join(
-      process.env.STL_DIRECTORY || "C:/Users/Quentin/Documents/fichier3d",
+      process.env.STL_DIRECTORY || "C:/Users/faber/Documents/fichier3d",
       fileName
     );
 
