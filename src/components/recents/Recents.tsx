@@ -41,9 +41,7 @@ const Recents = () => {
               <h3 className="text-lg font-semibold text-gray-900">{file}</h3>
               {/* 🔹 Rendu 3D du fichier STL */}
               <PreviewSTL
-                fileUrl={`http://localhost:5000/stl-files/${encodeURIComponent(
-                  file
-                )}`}
+                fileUrl={`/api/stl-files/${encodeURIComponent(file)}`}
               />
 
               <button

@@ -65,7 +65,7 @@ const ModeleCard: React.FC<ModeleCardProps> = ({ modele, onEdit }) => {
       {/* Prévisualisation */}
       <div className="relative aspect-square bg-gray-900/50">
         <PreviewSTL
-          fileUrl={`http://localhost:5000/api/stl-files/${encodeURIComponent(
+          fileUrl={`/api/stl-files/${encodeURIComponent(
             modele.fileName
           )}`}
         />

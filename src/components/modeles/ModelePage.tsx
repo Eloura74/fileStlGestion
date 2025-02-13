@@ -40,7 +40,7 @@ const ModelePage: React.FC = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await fetch("http://localhost:5000/api/stl-files");
+      const response = await fetch("/api/stl-files");
 
       if (!response.ok) {
         throw new Error(`Erreur HTTP: ${response.status}`);
@@ -68,9 +68,7 @@ const ModelePage: React.FC = () => {
     try {
       setError(null);
       const response = await fetch(
-        `http://localhost:5000/api/stl-files/${encodeURIComponent(
-          modele.fileName
-        )}/metadata`,
+        `/api/stl-files/${encodeURIComponent(modele.fileName)}/metadata`,
         {
           method: "PUT",
           headers: {
